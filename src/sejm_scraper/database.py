@@ -52,7 +52,7 @@ class Votes(Base):
     VotingInternalId = Column(Integer, primary_key=True)
     Url = Column(String)
     Person = Column(String, primary_key=True)
-    Party = Column(String)
+    Party = Column(String, primary_key=True)
     Vote = Column(String)
 
 
