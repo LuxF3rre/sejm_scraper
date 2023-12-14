@@ -24,13 +24,13 @@ Base = declarative_base()
 class Votings(Base):
     __tablename__ = "Votings"
 
-    SittingDayId = Column(Integer, primary_key=True)
-    VotingTimestamp = Column(DateTime, primary_key=True)
+    SittingDayId = Column(Integer)
+    VotingTimestamp = Column(DateTime)
     TermNumber = Column(Integer)
     SittingNumber = Column(Integer)
     VotingNumber = Column(Integer)
     SittingUrl = Column(String)
-    VotingUrl = Column(String)
+    VotingUrl = Column(String, primary_key=True)
     SittingTitle = Column(String)
     VotingTopic = Column(String)
 
@@ -38,9 +38,9 @@ class Votings(Base):
 class PartyVotesLinks(Base):
     __tablename__ = "PartyVotesLinks"
 
-    Url = Column(String, primary_key=True)
+    Url = Column(String)
     Party = Column(String)
-    VotingInternalId = Column(Integer)
+    VotingInternalId = Column(Integer, primary_key=True)
     TermNumber = Column(Integer)
     SittingNumber = Column(Integer)
     VotingNumber = Column(Integer)

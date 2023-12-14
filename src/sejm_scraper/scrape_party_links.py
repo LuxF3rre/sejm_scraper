@@ -38,40 +38,44 @@ def scrape_party_vote_links(
     term_number: int, sitting_number: int, voting_number: int
 ) -> None:
     url = f"https://www.sejm.gov.pl/Sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji={term_number}&NrPosiedzenia={sitting_number}&NrGlosowania={voting_number}"
-    logger.debug(f"Scraping {url}")
-    soup = get_page_content(url)
+    try:
+        logger.debug(f"Scraping {url}")
+        soup = get_page_content(url)
 
-    table = soup.select_one("table")
-    rows = table.find_all("tr")
+        table = soup.select_one("table")
+        rows = table.find_all("tr")
 
-    data = []
-    for row in rows[1:]:
-        cols = row.find_all("td")
-        rel_link = cols[0].select_one("a")["href"]
-        abs_link = "https://www.sejm.gov.pl/Sejm10.nsf/" + rel_link
-        party, voting_internal_id = get_party_vote_url_details(rel_link)
+        data = []
+        for row in rows[1:]:
+            cols = row.find_all("td")
+            rel_link = cols[0].select_one("a")["href"]
+            abs_link = "https://www.sejm.gov.pl/Sejm10.nsf/" + rel_link
+            party, voting_internal_id = get_party_vote_url_details(rel_link)
 
-        data.append(
-            {
-                "Url": abs_link,
-                "Party": party,
-                "VotingInternalId": voting_internal_id,
-                "TermNumber": term_number,
-                "SittingNumber": sitting_number,
-                "VotingNumber": voting_number,
-            }
-        )
+            data.append(
+                {
+                    "Url": abs_link,
+                    "Party": party,
+                    "VotingInternalId": voting_internal_id,
+                    "TermNumber": term_number,
+                    "SittingNumber": sitting_number,
+                    "VotingNumber": voting_number,
+                }
+            )
 
-    df = pd.DataFrame(data)
-    df["Url"] = df["Url"].astype(str)
-    df["Party"] = df["Party"].astype(str)
-    df["VotingInternalId"] = df["VotingInternalId"].astype(int)
-    df["TermNumber"] = df["TermNumber"].astype(int)
-    df["SittingNumber"] = df["SittingNumber"].astype(int)
-    df["VotingNumber"] = df["VotingNumber"].astype(int)
+        df = pd.DataFrame(data)
+        df["Url"] = df["Url"].astype(str)
+        df["Party"] = df["Party"].astype(str)
+        df["VotingInternalId"] = df["VotingInternalId"].astype(int)
+        df["TermNumber"] = df["TermNumber"].astype(int)
+        df["SittingNumber"] = df["SittingNumber"].astype(int)
+        df["VotingNumber"] = df["VotingNumber"].astype(int)
 
-    df.to_sql("PartyVotesLinks", db.engine, if_exists="append", index=False)
-    logger.debug(f"Finished scraping {url}")
+        df.to_sql("PartyVotesLinks", db.engine, if_exists="append", index=False)
+        logger.debug(f"Finished scraping {url}")
+
+    except Exception as e:
+        logger.error(f"An exception occurred with URL {url}: {e}")
 
 
 if __name__ == "__main__":

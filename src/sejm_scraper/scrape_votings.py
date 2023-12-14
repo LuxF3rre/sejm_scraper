@@ -53,61 +53,67 @@ def get_last_available_day() -> int:
 
 
 def scrape_voting(url: str) -> None:
-    logger.debug(f"Scraping {url}")
-    soup = get_page_content(url)
+    try:
+        logger.debug(f"Scraping {url}")
+        soup = get_page_content(url)
 
-    table_title = soup.select_one("h1")
-    table_title = table_title.text
-    voting_table = soup.select_one("table")
-    table_rows = voting_table.find_all("tr")
+        table_title = soup.select_one("h1")
+        table_title = table_title.text
+        voting_table = soup.select_one("table")
+        table_rows = voting_table.find_all("tr")
 
-    data = []
-    for row in table_rows[1:]:
-        cols = row.find_all("td")
+        data = []
+        for row in table_rows[1:]:
+            cols = row.find_all("td")
 
-        sitting_day_id = get_day_id(url)
-        voting_date = date_regexp.findall(table_title)[0]
-        voting_url = cols[0].select_one("a")["href"]
+            sitting_day_id = get_day_id(url)
+            voting_date = date_regexp.findall(table_title)[0]
+            voting_url = cols[0].select_one("a")["href"]
 
-        term_number, sitting_number, voting_number = get_voting_url_details(voting_url)
-        full_voting_url = "https://www.sejm.gov.pl/Sejm10.nsf/" + voting_url
-        hour = cols[1].text
-        topic = cols[2].text
+            term_number, sitting_number, voting_number = get_voting_url_details(
+                voting_url
+            )
+            full_voting_url = "https://www.sejm.gov.pl/Sejm10.nsf/" + voting_url
+            hour = cols[1].text
+            topic = cols[2].text
 
-        data.append(
-            {
-                "SittingDayId": sitting_day_id,
-                "Date": voting_date,
-                "TermNumber": term_number,
-                "SittingNumber": sitting_number,
-                "VotingNumber": voting_number,
-                "SittingUrl": url,
-                "VotingUrl": full_voting_url,
-                "SittingTitle": table_title,
-                "Time": hour,
-                "VotingTopic": topic,
-            }
+            data.append(
+                {
+                    "SittingDayId": sitting_day_id,
+                    "Date": voting_date,
+                    "TermNumber": term_number,
+                    "SittingNumber": sitting_number,
+                    "VotingNumber": voting_number,
+                    "SittingUrl": url,
+                    "VotingUrl": full_voting_url,
+                    "SittingTitle": table_title,
+                    "Time": hour,
+                    "VotingTopic": topic,
+                }
+            )
+
+        df = pd.DataFrame(data)
+        df["SittingDayId"] = df["SittingDayId"].astype(int)
+
+        df["VotingTimestamp"] = df["Date"] + " " + df["Time"]
+        df["VotingTimestamp"] = pd.to_datetime(
+            df["VotingTimestamp"], format="%d-%m-%Y %H:%M:%S"
         )
+        df = df.drop(columns=["Date", "Time"])
 
-    df = pd.DataFrame(data)
-    df["SittingDayId"] = df["SittingDayId"].astype(int)
+        df["TermNumber"] = df["TermNumber"].astype(int)
+        df["SittingNumber"] = df["SittingNumber"].astype(int)
+        df["VotingNumber"] = df["VotingNumber"].astype(int)
+        df["SittingUrl"] = df["SittingUrl"].astype(str)
+        df["VotingUrl"] = df["VotingUrl"].astype(str)
+        df["SittingTitle"] = df["SittingTitle"].astype(str)
+        df["VotingTopic"] = df["VotingTopic"].astype(str)
 
-    df["VotingTimestamp"] = df["Date"] + " " + df["Time"]
-    df["VotingTimestamp"] = pd.to_datetime(
-        df["VotingTimestamp"], format="%d-%m-%Y %H:%M:%S"
-    )
-    df = df.drop(columns=["Date", "Time"])
+        df.to_sql("Votings", db.engine, if_exists="append", index=False)
+        logger.debug(f"Finished scraping {url}")
 
-    df["TermNumber"] = df["TermNumber"].astype(int)
-    df["SittingNumber"] = df["SittingNumber"].astype(int)
-    df["VotingNumber"] = df["VotingNumber"].astype(int)
-    df["SittingUrl"] = df["SittingUrl"].astype(str)
-    df["VotingUrl"] = df["VotingUrl"].astype(str)
-    df["SittingTitle"] = df["SittingTitle"].astype(str)
-    df["VotingTopic"] = df["VotingTopic"].astype(str)
-
-    df.to_sql("Votings", db.engine, if_exists="append", index=False)
-    logger.debug(f"Finished scraping {url}")
+    except Exception as e:
+        logger.error(f"An exception occurred with URL {url}: {e}")
 
 
 if __name__ == "__main__":
@@ -124,4 +130,4 @@ if __name__ == "__main__":
     ]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
-        executor.map(scrape_voting, urls)
+        results = executor.map(scrape_voting, urls)

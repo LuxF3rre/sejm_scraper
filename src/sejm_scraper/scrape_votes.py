@@ -25,38 +25,42 @@ def get_reminding_vote_identifiers() -> list[tuple[int, str]]:
 
 def scrape_votes(vote_id: int, party: str) -> None:
     url = f"https://www.sejm.gov.pl/Sejm10.nsf/agent.xsp?symbol=klubglos&IdGlosowania={vote_id}&KodKlubu={party}"
-    logger.debug(f"Scraping {url}")
-    soup = get_page_content(url)
+    try:
+        logger.debug(f"Scraping {url}")
+        soup = get_page_content(url)
 
-    table = soup.select_one("table")
-    rows = table.find_all("tr")
+        table = soup.select_one("table")
+        rows = table.find_all("tr")
 
-    data = []
-    for row in rows[1:]:
-        cols = row.find_all("td")
-        for batched in chunked(cols, 3):
-            person = batched[1].text
-            vote = batched[2].text
+        data = []
+        for row in rows[1:]:
+            cols = row.find_all("td")
+            for batched in chunked(cols, 3):
+                person = batched[1].text
+                vote = batched[2].text
 
-            data.append(
-                {
-                    "VotingInternalId": vote_id,
-                    "Url": url,
-                    "Party": party,
-                    "Person": person,
-                    "Vote": vote,
-                }
-            )
+                data.append(
+                    {
+                        "VotingInternalId": vote_id,
+                        "Url": url,
+                        "Party": party,
+                        "Person": person,
+                        "Vote": vote,
+                    }
+                )
 
-    df = pd.DataFrame(data)
-    df["VotingInternalId"] = df["VotingInternalId"].astype(int)
-    df["Url"] = df["Url"].astype(str)
-    df["Party"] = df["Party"].astype(str)
-    df["Person"] = df["Person"].astype(str)
-    df["Vote"] = df["Vote"].astype(str)
+        df = pd.DataFrame(data)
+        df["VotingInternalId"] = df["VotingInternalId"].astype(int)
+        df["Url"] = df["Url"].astype(str)
+        df["Party"] = df["Party"].astype(str)
+        df["Person"] = df["Person"].astype(str)
+        df["Vote"] = df["Vote"].astype(str)
 
-    df.to_sql("Votes", db.engine, if_exists="append", index=False)
-    logger.debug(f"Finished scraping {url}")
+        df.to_sql("Votes", db.engine, if_exists="append", index=False)
+        logger.debug(f"Finished scraping {url}")
+
+    except Exception as e:
+        logger.error(f"An exception occurred with URL {url}: {e}")
 
 
 if __name__ == "__main__":
