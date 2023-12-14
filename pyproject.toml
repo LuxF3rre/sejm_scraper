@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "sejm_scraper"
+version = "0.1.0"
+description = ""
+authors = ["Maurycy Blaszczak <mgblaszczak@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.0"
+psycopg2 = "^2.9.9"
+sqlalchemy = "^2.0.23"
+scrapingbee = "^2.0.1"
+loguru = "^0.7.2"
+pandas = "^2.1.4"
+beautifulsoup4 = "^4.12.2"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.7"
+poetry = "^1.7.1"
+
+[tool.poetry.group.debug.dependencies]
+httpx = "^0.25.2"
+ipython = "^8.18.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
