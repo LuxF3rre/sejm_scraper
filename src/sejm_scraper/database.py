@@ -26,11 +26,11 @@ class Votings(Base):
 
     SittingDayId = Column(Integer)
     VotingTimestamp = Column(DateTime)
-    TermNumber = Column(Integer)
-    SittingNumber = Column(Integer)
-    VotingNumber = Column(Integer)
+    TermNumber = Column(Integer, primary_key=True)
+    SittingNumber = Column(Integer, primary_key=True)
+    VotingNumber = Column(Integer, primary_key=True)
     SittingUrl = Column(String)
-    VotingUrl = Column(String, primary_key=True)
+    VotingUrl = Column(String)
     SittingTitle = Column(String)
     VotingTopic = Column(String)
 
