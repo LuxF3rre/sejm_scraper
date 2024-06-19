@@ -1,17 +1,30 @@
 # Sejm Scraper
 
+## Usage
+
+### Install dependencies
+
+```console
+poetry install
+```
+
+### Launch database
+
 ```console
 docker-compose up
 ```
 
-```powershell
-python scrape_votings.py | Tee-Object -FilePath "votings.log" -Append
+### Start straping
+
+```console
+sejm-scraper # TODO: add to poetry scripts
 ```
 
-```powershell
-python scrape_party_links.py | Tee-Object -FilePath "party_links.log" -Append
-```
+## Development
 
-```powershell
-python scrape_votes.py | Tee-Object -FilePath "votes.log" -Append
+### Install dependencies
+
+```console
+poetry install --with dev
+pre-commit install
 ```
