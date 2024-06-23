@@ -1,15 +1,14 @@
-version: '3.8'
 services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_DB: sejm_scraper
-      POSTGRES_USER: sejm_scraper
-      POSTGRES_PASSWORD: sejm_scraper
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - sejm_scraper_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  sejm_scraper_postgres_data:
