@@ -1,7 +1,7 @@
 import os
 
-from sqlalchemy import Column, DateTime, Integer, String, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import CHAR, Boolean, Column, DateTime, ForeignKey, Integer, String, create_engine
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 database_name = os.getenv("SEJM_SCRAPER_DATABASE", "postgres")
 user = os.getenv("SEJM_SCRAPER_USER", "postgres")
@@ -20,36 +20,104 @@ SessionMaker = sessionmaker(bind=engine)
 Base = declarative_base()  # type: ignore
 
 
+class Terms(Base):  # type: ignore
+    __tablename__ = "Terms"
+
+    id = Column(CHAR(64), primary_key=True)
+
+    number = Column(Integer, nullable=False)
+
+    sittings = relationship("Sittings", back_populates="term")
+    mp_to_term_link = relationship("MpToTermLink", back_populates="term")
+
+
+class Sittings(Base):  # type: ignore
+    __tablename__ = "Sittings"
+
+    id = Column(CHAR(64), primary_key=True)
+    term_id = Column(CHAR(64), ForeignKey("Terms.id"), nullable=False)
+
+    title = Column(String, nullable=False)
+    number = Column(Integer, nullable=False)
+
+    term = relationship("Terms", back_populates="sittings")
+    votings = relationship("Votings", back_populates="sitting")
+
+
 class Votings(Base):  # type: ignore
     __tablename__ = "Votings"
 
-    SittingDayId = Column(Integer)
-    VotingTimestamp = Column(DateTime)
-    TermNumber = Column(Integer, primary_key=True)
-    SittingNumber = Column(Integer, primary_key=True)
-    VotingNumber = Column(Integer, primary_key=True)
-    SittingUrl = Column(String)
-    VotingUrl = Column(String)
-    SittingTitle = Column(String)
-    VotingTopic = Column(String)
+    id = Column(CHAR(64), primary_key=True)
+    sitting_id = Column(CHAR(64), ForeignKey("Sittings.id"), nullable=False)
+
+    sitting_day = Column(Integer, nullable=False)
+    voting_number = Column(Integer, nullable=False)
+    date = Column(DateTime, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    topic = Column(String, nullable=True)
+
+    sitting = relationship("Sittings", back_populates="votings")
+    voting_options = relationship("VotingOptions", back_populates="voting")
 
 
-class PartyVotesLinks(Base):  # type: ignore
-    __tablename__ = "PartyVotesLinks"
+class VotingOptions(Base):  # type: ignore
+    __tablename__ = "VotingOptions"
 
-    Url = Column(String)
-    Party = Column(String)
-    VotingInternalId = Column(Integer, primary_key=True)
-    TermNumber = Column(Integer)
-    SittingNumber = Column(Integer)
-    VotingNumber = Column(Integer)
+    id = Column(CHAR(64), primary_key=True)
+    voting_id = Column(CHAR(64), ForeignKey("Votings.id"), nullable=False)
+
+    option_index = Column(Integer, nullable=False)
+    description = Column(String, nullable=True)
+
+    voting = relationship("Votings", back_populates="voting_options")
+    votes = relationship("Votes", back_populates="voting_option")
 
 
 class Votes(Base):  # type: ignore
     __tablename__ = "Votes"
 
-    VotingInternalId = Column(Integer, primary_key=True)
-    Url = Column(String)
-    Person = Column(String, primary_key=True)
-    Party = Column(String, primary_key=True)
-    Vote = Column(String)
+    id = Column(CHAR(64), primary_key=True)
+    voting_option_id = Column(CHAR(64), ForeignKey("VotingOptions.id"), nullable=False)
+    mp_id = Column(CHAR(64), ForeignKey("MPs.id"), nullable=False)
+
+    vote = Column(String, nullable=False)
+
+    voting_option = relationship("VotingOptions", back_populates="votes")
+    mp = relationship("MPs", back_populates="votes")
+
+
+class MPs(Base):  # type: ignore
+    __tablename__ = "MPs"
+
+    id = Column(CHAR(64), primary_key=True)
+
+    first_name = Column(String, nullable=False)
+    second_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=False)
+    birth_date = Column(String, nullable=False)
+    birth_place = Column(String, nullable=True)
+
+    votes = relationship("Votes", back_populates="mp")
+    mp_to_term_link = relationship("MpToTermLink", back_populates="mp")
+
+
+class MpToTermLink(Base):  # type: ignore
+    __tablename__ = "MpToTermLink"
+
+    id = Column(CHAR(64), primary_key=True)
+    mp_id = Column(CHAR(64), ForeignKey("MPs.id"), nullable=False)
+    term_id = Column(CHAR(64), ForeignKey("Terms.id"), nullable=False)
+
+    in_term_id = Column(Integer, nullable=False)
+    party = Column(String, nullable=True)
+    education = Column(String, nullable=True)
+    profession = Column(String, nullable=True)
+    voivodeship = Column(String, nullable=True)
+    district_name = Column(String, nullable=False)
+    became_inactive = Column(Boolean, nullable=False)
+    inactivity_cause = Column(String, nullable=True)
+    inactivity_description = Column(String, nullable=True)
+
+    mp = relationship("MPs", back_populates="mp_to_term_link")
+    term = relationship("Terms", back_populates="mp_to_term_link")
