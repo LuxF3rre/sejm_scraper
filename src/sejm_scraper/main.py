@@ -125,7 +125,13 @@ def scrape() -> None:
                     logger.warning(f"No voting data for term {term.number}, sitting {sitting.number}")
                 for voting in votings:
                     logger.info(f"Scraping votting {voting.voting_number} in sitting {sitting.number} in {term.number}")
-                    voting_id = _get_surogate_key(term.number, sitting.number, voting.sitting_day, voting.voting_number)
+                    voting_id = _get_surogate_key(
+                        term.number,
+                        sitting.number,
+                        voting.sitting_day,
+                        voting.voting_number,
+                        voting.date,
+                    )
                     db_item = database.Votings(
                         id=voting_id,
                         sitting_id=sitting_id,
@@ -154,6 +160,7 @@ def scrape() -> None:
                             sitting.number,
                             voting.sitting_day,
                             voting.voting_number,
+                            voting.date,
                             voting_option.option_index,
                         )
                         db_item = database.VotingOptions(
