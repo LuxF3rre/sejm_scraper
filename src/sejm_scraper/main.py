@@ -10,6 +10,7 @@ from sejm_scraper.database import Base, SessionMaker, engine
 
 app = typer.Typer()
 
+
 def _get_surogate_key(*s: str) -> str:
     to_hash = [str(x) for x in s if x is not None]
     to_hash_bytes = "".join(to_hash).encode("utf-8")
@@ -17,6 +18,7 @@ def _get_surogate_key(*s: str) -> str:
     sha256_hash.update(to_hash_bytes)
     hex_hash = sha256_hash.hexdigest()
     return hex_hash
+
 
 @app.command()
 def prepare_database() -> None:
@@ -27,7 +29,6 @@ def prepare_database() -> None:
 def scrape() -> None:
     client = httpx.Client()
     with SessionMaker() as db:
-
         #
         # terms
         #
@@ -171,11 +172,16 @@ def scrape() -> None:
                     votes = api.get_votes(client, term.number, sitting.number, voting.voting_number)
                     if not votings:
                         logger.warning(
-                            f"No votes data for term {term.number}, sitting {sitting.number}, voting {voting.voting_number}"
+                            f"No votes data for term {term.number} ",
+                            f"sitting {sitting.number}, voting {voting.voting_number}",
                         )
 
                     for vote in votes.mp_votes:
-                        logger.info(f"Scraping vote {vote.mp_term_id} in votting {voting.voting_number} in sitting {sitting.number} in {term.number}")
+                        logger.info(
+                            f"Scraping vote {vote.mp_term_id} "
+                            f"in votting {voting.voting_number} "
+                            f"in sitting {sitting.number} in {term.number}"
+                        )
                         mp_id_query = (
                             db.query(database.MpToTermLink)
                             .filter(
