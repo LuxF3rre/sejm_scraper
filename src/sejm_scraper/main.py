@@ -210,6 +210,7 @@ def scrape() -> None:
                                 sitting.number,
                                 voting.sitting_day,
                                 voting.voting_number,
+                                voting.date,
                                 inner_vote_index,
                                 mp_id,  # type: ignore
                             )
@@ -218,6 +219,7 @@ def scrape() -> None:
                                 sitting.number,
                                 voting.sitting_day,
                                 voting.voting_number,
+                                voting.date,
                                 inner_vote_index,
                             )
                             db_item = database.Votes(
