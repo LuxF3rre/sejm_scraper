@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Literal, NewType, Union
 
@@ -61,7 +61,7 @@ class MpSchema(BaseModel):
     first_name: str = Field(validation_alias="firstName")
     second_name: Union[str, None] = Field(default=None, validation_alias="secondName")
     last_name: str = Field(validation_alias="lastName")
-    birth_date: str = Field(validation_alias="birthDate")
+    birth_date: date = Field(validation_alias="birthDate")
     birth_place: Union[str, None] = Field(default=None, validation_alias="birthLocation")
     party: Union[str, None] = Field(default=None, validation_alias="club")
     education: Union[str, None] = Field(default=None, validation_alias="educationLevel")
