@@ -32,7 +32,6 @@ def scrape() -> None:
         #
         # terms
         #
-
         terms = api.get_terms(client)
         if not terms:
             logger.warning("No terms data")
@@ -106,6 +105,10 @@ def scrape() -> None:
                 logger.warning(f"No sittings data for term {term.number}")
             for sitting in sittings:
                 logger.info(f"Scraping sitting {sitting.number} in {term.number}")
+
+                if sitting.number == 0:  # skip planned sittings
+                    continue
+
                 sitting_id = _get_surogate_key(term.number, sitting.number)
                 db_item = database.Sittings(
                     id=sitting_id,
