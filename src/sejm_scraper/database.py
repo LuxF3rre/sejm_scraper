@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import CHAR, Boolean, Column, DateTime, ForeignKey, Integer, String, create_engine
+from sqlalchemy import CHAR, Boolean, Column, DateTime, ForeignKey, Integer, String, create_engine, Date
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 database_name = os.getenv("SEJM_SCRAPER_DATABASE", "postgres")
@@ -95,7 +95,7 @@ class MPs(Base):  # type: ignore
     first_name = Column(String, nullable=False)
     second_name = Column(String, nullable=True)
     last_name = Column(String, nullable=False)
-    birth_date = Column(String, nullable=False)
+    birth_date = Column(Date, nullable=False)
     birth_place = Column(String, nullable=True)
 
     votes = relationship("Votes", back_populates="mp")
