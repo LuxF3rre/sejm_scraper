@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import CHAR, Boolean, Column, DateTime, ForeignKey, Integer, String, create_engine, Date
+from sqlalchemy import CHAR, Boolean, Column, Date, DateTime, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 database_name = os.getenv("SEJM_SCRAPER_DATABASE", "postgres")
