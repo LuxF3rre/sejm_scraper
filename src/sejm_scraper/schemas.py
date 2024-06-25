@@ -26,7 +26,7 @@ class VotingSchema(BaseModel):
     term: int
     sitting: int
     sitting_day: int = Field(validation_alias="sittingDay")
-    voting_number: int = Field(validation_alias="votingNumber")
+    number: int = Field(validation_alias="votingNumber")
     date: datetime
 
     title: str

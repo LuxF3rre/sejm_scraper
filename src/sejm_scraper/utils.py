@@ -35,7 +35,7 @@ def get_voting_sk(
         term.number,
         sitting.number,
         voting.sitting_day,
-        voting.voting_number,
+        voting.number,
         voting.date,
     )
 
@@ -50,7 +50,7 @@ def get_voting_option_sk(
         term.number,
         sitting.number,
         voting.sitting_day,
-        voting.voting_number,
+        voting.number,
         voting.date,
         voting_option_index,
     )
@@ -67,7 +67,7 @@ def get_vote_sk(
         term.number,
         sitting.number,
         voting.sitting_day,
-        voting.voting_number,
+        voting.number,
         voting.date,
         voting_option_index,
         mp_id,
