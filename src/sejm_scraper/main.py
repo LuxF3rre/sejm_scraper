@@ -1,5 +1,3 @@
-from hashlib import sha256
-
 import httpx
 import typer  # type: ignore
 from loguru import logger
@@ -7,17 +5,9 @@ from loguru import logger
 from sejm_scraper import api_client as api
 from sejm_scraper import database, schemas
 from sejm_scraper.database import Base, SessionMaker, engine
+from sejm_scraper.utils import _get_surogate_key
 
 app = typer.Typer()
-
-
-def _get_surogate_key(*s: str) -> str:
-    to_hash = [str(x) for x in s if x is not None]
-    to_hash_bytes = "".join(to_hash).encode("utf-8")
-    sha256_hash = sha256()
-    sha256_hash.update(to_hash_bytes)
-    hex_hash = sha256_hash.hexdigest()
-    return hex_hash
 
 
 @app.command()
