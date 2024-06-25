@@ -76,7 +76,7 @@ def scrape(
             if not votings:
                 logger.warning(f"No voting data for term {term.number}, sitting {sitting.number}")
             if from_voting is not None and sitting.number == from_sitting and term.number == from_term:
-                votings = [voting for voting in votings if voting.n >= from_voting]
+                votings = [voting for voting in votings if voting.number >= from_voting]
             for voting in votings:
                 process.process_voting(voting=voting, term=term, sitting=sitting)
 
@@ -99,11 +99,11 @@ def scrape(
                 # votes
                 #
 
-                votes = api.get_votes(client, term.number, sitting.number, voting.voting.number)
+                votes = api.get_votes(client, term.number, sitting.number, voting.number)
                 if not votings:
                     logger.warning(
                         f"No votes data for term {term.number} ",
-                        f"sitting {sitting.number}, voting {voting.voting.number}",
+                        f"sitting {sitting.number}, voting {voting.number}",
                     )
                 for vote in votes.mp_votes:
                     process.process_vote(
