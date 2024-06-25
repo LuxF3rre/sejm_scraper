@@ -25,8 +25,8 @@ def scrape(
     from_term, from_sitting, from_voting = None, None, None
     if from_point is not None:
         from_elements = [int(x) for x in from_point.split(",")]
-        default_values = (None, None, None)
-        from_term, from_sitting, from_voting = (list(from_elements) + list(default_values))[:3]
+        fill = 3 - len(from_elements)
+        from_term, from_sitting, from_voting = from_elements + [None] * fill
 
     client = httpx.Client()
 
