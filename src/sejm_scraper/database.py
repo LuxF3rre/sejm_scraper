@@ -51,7 +51,7 @@ class Votings(Base):  # type: ignore
     sitting_id = Column(CHAR(64), ForeignKey("Sittings.id"), nullable=False)
 
     sitting_day = Column(Integer, nullable=False)
-    voting_number = Column(Integer, nullable=False)
+    number = Column(Integer, nullable=False)
     date = Column(DateTime, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
