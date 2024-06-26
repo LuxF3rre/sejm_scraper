@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11.9"
+python = "^3.12"
 psycopg2 = "^2.9.9"
 sqlalchemy = "^2.0.23"
 loguru = "^0.7.2"
@@ -29,12 +29,12 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
-target-version = ["py311"]
+target-version = ["py312"]
 line-length = 120
 skip-string-normalization = true
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 120
 lint.select = [
     "A",
