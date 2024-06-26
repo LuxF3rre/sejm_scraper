@@ -158,6 +158,21 @@ If you have poetry:
 sejm-scraper --help
 ```
 
+## Limitations
+
+This project's scope is constrained by the data availability from the Sejm API:
+
+- Absence of MP data for term 2.
+- Limited to only term and MP data for terms 3 through 7.
+
+To address these gaps, future development efforts will aim to source the missing data directly from the Sejm's official website. The data is not exposed directly on the webpage, but can be obtained by using the following URL pattern:
+
+`https://sejm.gov.pl/sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji={term_number}&NrPosiedzenia={sitting_number}&NrGlosowania={voting_number}`
+
+For example:
+
+`https://sejm.gov.pl/sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji=3&NrPosiedzenia=6&NrGlosowania=2`
+
 ## References
 
 Sejm API:
