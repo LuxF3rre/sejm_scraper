@@ -8,7 +8,7 @@ def process_term(
     term: schemas.TermSchema,
 ) -> None:
     logger.info(f"Processing {term.number} term")
-    term_id = utils.get_term_sk(term=term)
+    term_id = utils.get_term_nk(term=term)
     db_item = database.Terms(
         id=term_id,
         number=term.number,
@@ -23,9 +23,9 @@ def process_sitting(
     term: schemas.TermSchema,
 ) -> None:
     logger.info(f"Processing sitting {sitting.number} in {term.number} term")
-    term_id = utils.get_term_sk(term)
+    term_id = utils.get_term_nk(term)
     if sitting.number != 0:  # skip planned sittings
-        sitting_id = utils.get_sitting_sk(sitting=sitting, term=term)
+        sitting_id = utils.get_sitting_nk(sitting=sitting, term=term)
         db_item = database.Sittings(
             id=sitting_id,
             term_id=term_id,
@@ -45,8 +45,8 @@ def process_voting(
     sitting: schemas.SittingSchema,
 ) -> None:
     logger.info(f"Processing voting {voting.number} in sitting {sitting.number} in {term.number} term")
-    voting_id = utils.get_voting_sk(voting=voting, term=term, sitting=sitting)
-    sitting_id = utils.get_sitting_sk(sitting=sitting, term=term)
+    voting_id = utils.get_voting_nk(voting=voting, term=term, sitting=sitting)
+    sitting_id = utils.get_sitting_nk(sitting=sitting, term=term)
     db_item = database.Votings(
         id=voting_id,
         sitting_id=sitting_id,
@@ -73,8 +73,8 @@ def process_voting_option(
         f"in voting {voting.number} "
         f"in sitting {sitting.number} in {term.number} term"
     )
-    voting_id = utils.get_voting_sk(voting=voting, term=term, sitting=sitting)
-    voting_option_id = utils.get_voting_option_sk(
+    voting_id = utils.get_voting_nk(voting=voting, term=term, sitting=sitting)
+    voting_option_id = utils.get_voting_option_nk(
         voting_option_index=voting_option.option_index,
         term=term,
         sitting=sitting,
@@ -100,7 +100,7 @@ def process_vote(
     if vote.vote == "VOTE_VALID":
         raise TypeError
 
-    term_id = utils.get_term_sk(term)
+    term_id = utils.get_term_nk(term)
 
     with SessionMaker() as db:
         mp_id_query = (
@@ -128,7 +128,7 @@ def process_vote(
                 f"in voting {voting.number} "
                 f"in sitting {sitting.number} in {term.number} term"
             )
-            inner_vote_id = utils.get_vote_sk(
+            inner_vote_id = utils.get_vote_nk(
                 term=term,
                 sitting=sitting,
                 voting=voting,
@@ -136,7 +136,7 @@ def process_vote(
                 mp_id=mp_id,  # type: ignore
             )
 
-            voting_option_id = utils.get_voting_option_sk(
+            voting_option_id = utils.get_voting_option_nk(
                 voting_option_index=inner_vote_index,
                 term=term,
                 sitting=sitting,
@@ -158,7 +158,7 @@ def process_mp(
     term: schemas.TermSchema,
 ) -> None:
     logger.info(f"Processing mp of in term id {mp.in_term_id} in {term.number} term")
-    mp_id = utils.get_mp_sk(mp=mp)
+    mp_id = utils.get_mp_nk(mp=mp)
     with SessionMaker() as db:
         db_item = database.MPs(
             id=mp_id,
@@ -177,9 +177,9 @@ def process_mp_to_term_link(
     term: schemas.TermSchema,
 ) -> None:
     logger.info(f"Processing mp to term link of mp of in term id {mp.in_term_id} in {term.number} term")
-    mp_to_term_link_id = utils.get_mp_to_term_link_sk(mp=mp, term=term)
-    term_id = utils.get_term_sk(term)
-    mp_id = utils.get_mp_sk(mp)
+    mp_to_term_link_id = utils.get_mp_to_term_link_nk(mp=mp, term=term)
+    term_id = utils.get_term_nk(term)
+    mp_id = utils.get_mp_nk(mp)
     db_item = database.MpToTermLink(
         id=mp_to_term_link_id,
         mp_id=mp_id,
