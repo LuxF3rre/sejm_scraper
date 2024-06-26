@@ -29,7 +29,7 @@ Furthermore, maintaining a local copy of the data ensures rapid access to the en
 
 ### Data quality notes
 
-The Sejm API models MPs on a term-by-term basis rather than maintaining a continuous, global MP entity. In contrast, our enhanced data model treats each MP as a global object. This difference introduces potential duplication in our data due to various inconsistencies originating from the Sejm API, including:
+The Sejm API models MPs on a term-by-term basis rather than maintaining a continuous, global MP entity. In contrast, the enhanced data model treats each MP as a global object. This difference introduces potential duplication in our data due to various inconsistencies originating from the Sejm API, including:
 
 - Data entry errors, such as typos or inconsistent naming of birthplaces.
 - Changes in an MP's last name, commonly due to marriage.
@@ -41,7 +41,7 @@ To ensure accurate and reliable analysis, it's crucial to deduplicate these entr
 
 - [x] Built with **🐍Python** and **Postgres** on **🐋Docker**.
 - [x] Normalized data model with primary keys, foreign keys, and not null constrains.
-- [x] Fast and realiable processing thanks to the custom client of [Sejm API](https://api.sejm.gov.pl/sejm/openapi/ui).
+- [x] Fast and realiable processing thanks to the custom client for [Sejm API](https://api.sejm.gov.pl/sejm/openapi/ui).
 - [x] Able to resume work from a given term, sitting, and voting.
 
 ## Data model
@@ -162,10 +162,11 @@ sejm-scraper --help
 
 This project's scope is constrained by the data availability from the Sejm API:
 
-- Absence of MP data for term 2.
-- Limited to only term and MP data for terms 3 through 7.
+1. Absence of MP data for term 2.
+2. Limited to only term and MP data for terms 3 through 7.
+3. Absence of exact dates of becoming inactive or active for MPs. 
 
-To address these gaps, future development efforts will aim to source the missing data directly from the Sejm's official website. The data is not exposed directly on the webpage, but can be obtained by using the following URL pattern:
+To address the first two gaps, future development efforts should aim to source the missing data directly from the Sejm's official website. The data is not exposed directly on the webpage, but can be obtained by using the following URL pattern:
 
 `https://sejm.gov.pl/sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji={term_number}&NrPosiedzenia={sitting_number}&NrGlosowania={voting_number}`
 
