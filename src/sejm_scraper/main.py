@@ -19,7 +19,7 @@ def prepare_database() -> None:
 @app.command()
 def scrape(
     from_point: Annotated[
-        Union[str, None], typer.Option(help="In form of term,[sitting],[voting], e.g. 10,13,35; 10,13; 10")
+        Union[str, None], typer.Option(help="In form of term[,sitting[,voting]], e.g. 10,13,35; 10,13; 10")
     ] = None,
 ) -> None:
     from_term, from_sitting, from_voting = None, None, None
