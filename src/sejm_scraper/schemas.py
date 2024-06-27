@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 class TermSchema(BaseModel):
     number: int = Field(validation_alias="num")
+    from_date: date = Field(validation_alias="from")
+    to_date: Union[date, None] = Field(default=None, validation_alias="to")
 
 
 class SittingSchema(BaseModel):
@@ -18,7 +20,7 @@ OptionIndex = NewType("OptionIndex", int)
 
 
 class VotingOptionSchema(BaseModel):
-    option_index: OptionIndex = Field(validation_alias="optionIndex")
+    index: OptionIndex = Field(validation_alias="optionIndex")
     description: Union[str, None] = Field(default=None)
 
 
@@ -48,6 +50,7 @@ VOTE_VALID = Literal["VOTE_VALID"]  # vote value when multiple options are prese
 
 class MpVoteSchema(BaseModel):
     mp_term_id: int = Field(validation_alias="MP")
+    party: Union[str, None] = Field(default=None, validation_alias="club")
     votes: Union[dict[OptionIndex, Vote], None] = Field(default=None, validation_alias="listVotes")
     vote: Union[Vote, VOTE_VALID]
 
@@ -63,7 +66,6 @@ class MpSchema(BaseModel):
     last_name: str = Field(validation_alias="lastName")
     birth_date: date = Field(validation_alias="birthDate")
     birth_place: Union[str, None] = Field(default=None, validation_alias="birthLocation")
-    party: Union[str, None] = Field(default=None, validation_alias="club")
     education: Union[str, None] = Field(default=None, validation_alias="educationLevel")
     profession: Union[str, None] = Field(default=None)
     voivodeship: Union[str, None] = Field(default=None)
