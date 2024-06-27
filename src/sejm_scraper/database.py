@@ -26,6 +26,8 @@ class Terms(Base):  # type: ignore
     id = Column(CHAR(64), primary_key=True)
 
     number = Column(Integer, nullable=False)
+    from_date = Column(Date, nullable=False)
+    to_date = Column(Date, nullable=True)
 
     sittings = relationship("Sittings", back_populates="term")
     mp_to_term_link = relationship("MpToTermLink", back_populates="term")
@@ -67,7 +69,7 @@ class VotingOptions(Base):  # type: ignore
     id = Column(CHAR(64), primary_key=True)
     voting_id = Column(CHAR(64), ForeignKey("Votings.id"), nullable=False)
 
-    option_index = Column(Integer, nullable=False)
+    index = Column(Integer, nullable=False)
     description = Column(String, nullable=True)
 
     voting = relationship("Votings", back_populates="voting_options")
@@ -82,6 +84,7 @@ class Votes(Base):  # type: ignore
     mp_id = Column(CHAR(64), ForeignKey("MPs.id"), nullable=False)
 
     vote = Column(String, nullable=False)
+    party = Column(String, nullable=True)
 
     voting_option = relationship("VotingOptions", back_populates="votes")
     mp = relationship("MPs", back_populates="votes")
@@ -110,7 +113,6 @@ class MpToTermLink(Base):  # type: ignore
     term_id = Column(CHAR(64), ForeignKey("Terms.id"), nullable=False)
 
     in_term_id = Column(Integer, nullable=False)
-    party = Column(String, nullable=True)
     education = Column(String, nullable=True)
     profession = Column(String, nullable=True)
     voivodeship = Column(String, nullable=True)

@@ -12,6 +12,8 @@ def process_term(
     db_item = database.Terms(
         id=term_id,
         number=term.number,
+        from_date=term.from_date,
+        to_date=term.to_date,
     )
     with SessionMaker() as db:
         db.merge(db_item)
@@ -69,13 +71,13 @@ def process_voting_option(
     voting: schemas.VotingSchema,
 ) -> None:
     logger.info(
-        f"Processing voting option {voting_option.option_index} "
+        f"Processing voting option {voting_option.index} "
         f"in voting {voting.number} "
         f"in sitting {sitting.number} in {term.number} term"
     )
     voting_id = utils.get_voting_nk(voting=voting, term=term, sitting=sitting)
     voting_option_id = utils.get_voting_option_nk(
-        voting_option_index=voting_option.option_index,
+        voting_option_index=voting_option.index,
         term=term,
         sitting=sitting,
         voting=voting,
@@ -83,7 +85,7 @@ def process_voting_option(
     db_item = database.VotingOptions(
         id=voting_option_id,
         voting_id=voting_id,
-        option_index=voting_option.option_index,
+        index=voting_option.index,
         description=voting_option.description,
     )
     with SessionMaker() as db:
@@ -97,9 +99,6 @@ def process_vote(
     voting: schemas.VotingSchema,
     vote: schemas.MpVoteSchema,
 ) -> None:
-    if vote.vote == "VOTE_VALID":
-        raise TypeError
-
     term_id = utils.get_term_nk(term)
 
     with SessionMaker() as db:
@@ -119,6 +118,8 @@ def process_vote(
 
         inner_votes = vote.votes
         if inner_votes is None:
+            if vote.vote == "VOTE_VALID":
+                raise TypeError
             inner_votes = {schemas.OptionIndex(1): vote.vote}
 
         for inner_vote_index, inner_vote in inner_votes.items():
@@ -148,6 +149,7 @@ def process_vote(
                 voting_option_id=voting_option_id,
                 mp_id=mp_id,
                 vote=inner_vote,
+                party=vote.party,
             )
             db.merge(db_item)
             db.commit()
@@ -185,7 +187,6 @@ def process_mp_to_term_link(
         mp_id=mp_id,
         term_id=term_id,
         in_term_id=mp.in_term_id,
-        party=mp.party,
         education=mp.education,
         profession=mp.profession,
         voivodeship=mp.voivodeship,
