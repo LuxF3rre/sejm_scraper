@@ -28,7 +28,7 @@ def scrape(
         fill = 3 - len(from_elements)
         from_term, from_sitting, from_voting = from_elements + [None] * fill
 
-    client = httpx.Client()
+    client = httpx.Client(timeout=30.0)
 
     #
     # terms
