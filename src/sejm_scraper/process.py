@@ -193,7 +193,6 @@ def process_mp_to_term_link(
         district_name=mp.district_name,
         inactivity_cause=mp.inactivity_cause,
         inactivity_description=mp.inactivity_description,
-        became_inactive=mp.inactivity_cause is not None or mp.inactivity_description is not None,
     )
     with SessionMaker() as db:
         db.merge(db_item)
