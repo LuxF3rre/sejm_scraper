@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import CHAR, Boolean, Column, Date, DateTime, ForeignKey, Integer, String, create_engine
+from sqlalchemy import CHAR, Column, Date, DateTime, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 database_name = os.getenv("SEJM_SCRAPER_DATABASE", "postgres")
@@ -117,7 +117,6 @@ class MpToTermLink(Base):  # type: ignore
     profession = Column(String, nullable=True)
     voivodeship = Column(String, nullable=True)
     district_name = Column(String, nullable=False)
-    became_inactive = Column(Boolean, nullable=False)
     inactivity_cause = Column(String, nullable=True)
     inactivity_description = Column(String, nullable=True)
 

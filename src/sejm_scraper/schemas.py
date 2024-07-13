@@ -70,6 +70,6 @@ class MpSchema(BaseModel):
     profession: Union[str, None] = Field(default=None)
     voivodeship: Union[str, None] = Field(default=None)
     district_name: str = Field(validation_alias="districtName")
-    # Usualy both below are present, but sometimes only waiver_description is present
+    # Usualy both below are present, but sometimes only inactivity_description is present
     inactivity_cause: Union[str, None] = Field(default=None, validation_alias="inactiveCause")
     inactivity_description: Union[str, None] = Field(default=None, validation_alias="waiverDesc")
