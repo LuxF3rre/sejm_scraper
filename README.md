@@ -136,6 +136,20 @@ sejm-scraper scrape
 
 ### 7. Resume scraping:
 
+#### From the latest available point in the database
+
+```console
+python ./src/sejm_scraper/main.py resume
+```
+
+If you have poetry:
+
+```console
+sejm-scraper resume
+```
+
+#### From a specific point
+
 ```console
 python ./src/sejm_scraper/main.py scrape --from-point term[,sitting[,voting]]
 ```
