@@ -6,7 +6,7 @@ from loguru import logger
 
 from sejm_scraper import api_client as api
 from sejm_scraper import process, schemas
-from sejm_scraper.database import Base, engine
+from sejm_scraper.database import Base, SessionMaker, Sittings, Terms, Votings, engine
 
 app = typer.Typer()
 
@@ -114,6 +114,58 @@ def scrape(
                     )
 
     logger.info("All done")
+
+
+@app.command()
+def resume() -> None:
+    with SessionMaker() as db:
+        latest_term = db.query(Terms.number).order_by(Terms.number.desc()).first()
+
+        if latest_term is None:
+            logger.info("No existing data found. Starting from the beginning")
+            scrape()
+            return
+
+        latest_term_number = latest_term[0]
+
+        latest_sitting = (
+            db.query(Sittings.number)
+            .join(Terms)
+            .filter(Terms.number == latest_term_number)
+            .order_by(Sittings.number.desc())
+            .first()
+        )
+
+        if latest_sitting is None:
+            from_point = f"{latest_term_number}"
+            logger.info(f"Resuming from term {latest_term_number}")
+            scrape(from_point=from_point)
+            return
+
+        latest_sitting_number = latest_sitting[0]
+
+        latest_voting = (
+            db.query(Votings.number)
+            .join(Sittings)
+            .join(Terms)
+            .filter(Terms.number == latest_term_number, Sittings.number == latest_sitting_number)
+            .order_by(Votings.number.desc())
+            .first()
+        )
+
+        if latest_voting is None:
+            from_point = f"{latest_term_number},{latest_sitting_number}"
+            logger.info(f"Resuming from term {latest_term_number}, sitting {latest_sitting_number}")
+            scrape(from_point=from_point)
+            return
+
+        latest_voting_number = latest_voting[0]
+
+        from_point = f"{latest_term_number},{latest_sitting_number},{latest_voting_number}"
+        logger.info(
+            f"Resuming from term {latest_term_number}, sitting {latest_sitting_number}, voting {latest_voting_number}"
+        )
+        scrape(from_point=from_point)
 
 
 if __name__ == "__main__":
