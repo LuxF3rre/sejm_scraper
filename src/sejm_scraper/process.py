@@ -38,7 +38,10 @@ def process_sitting(
             db.merge(db_item)
             db.commit()
     else:
-        logger.info(f"Sitting {sitting.number} in {term.number} term is planned sitting, skipping")
+        logger.info(
+            f"Sitting {sitting.number} in {term.number} "
+            "term is planned sitting, skipping"
+        )
 
 
 def process_voting(
@@ -46,7 +49,10 @@ def process_voting(
     term: schemas.TermSchema,
     sitting: schemas.SittingSchema,
 ) -> None:
-    logger.info(f"Processing voting {voting.number} in sitting {sitting.number} in {term.number} term")
+    logger.info(
+        f"Processing voting {voting.number} in sitting {sitting.number} "
+        f"in {term.number} term"
+    )
     voting_id = utils.get_voting_nk(voting=voting, term=term, sitting=sitting)
     sitting_id = utils.get_sitting_nk(sitting=sitting, term=term)
     db_item = database.Votings(
@@ -114,7 +120,7 @@ def process_vote(
         if mp_id_query is None:
             raise ValueError
 
-        mp_id = mp_id_query.mp_id  # type: ignore
+        mp_id = mp_id_query.mp_id
 
         inner_votes = vote.votes
         if inner_votes is None:
@@ -134,7 +140,7 @@ def process_vote(
                 sitting=sitting,
                 voting=voting,
                 voting_option_index=inner_vote_index,
-                mp_id=mp_id,  # type: ignore
+                mp_id=mp_id,
             )
 
             voting_option_id = utils.get_voting_option_nk(
@@ -159,7 +165,9 @@ def process_mp(
     mp: schemas.MpSchema,
     term: schemas.TermSchema,
 ) -> None:
-    logger.info(f"Processing mp of in term id {mp.in_term_id} in {term.number} term")
+    logger.info(
+        f"Processing mp of in term id {mp.in_term_id} in {term.number} term"
+    )
     mp_id = utils.get_mp_nk(mp=mp)
     with SessionMaker() as db:
         db_item = database.MPs(
@@ -178,7 +186,10 @@ def process_mp_to_term_link(
     mp: schemas.MpSchema,
     term: schemas.TermSchema,
 ) -> None:
-    logger.info(f"Processing mp to term link of mp of in term id {mp.in_term_id} in {term.number} term")
+    logger.info(
+        f"Processing mp to term link of mp of in term id {mp.in_term_id} "
+        f"in {term.number} term"
+    )
     mp_to_term_link_id = utils.get_mp_to_term_link_nk(mp=mp, term=term)
     term_id = utils.get_term_nk(term)
     mp_id = utils.get_mp_nk(mp)
