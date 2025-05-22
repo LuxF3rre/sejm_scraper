@@ -35,7 +35,9 @@ class VotingSchema(BaseModel):
     description: Union[str, None] = Field(default=None)
     topic: Union[str, None] = Field(default=None)
 
-    voting_options: Union[list[VotingOptionSchema], None] = Field(default=None, validation_alias="votingOptions")
+    voting_options: Union[list[VotingOptionSchema], None] = Field(
+        default=None, validation_alias="votingOptions"
+    )
 
 
 class Vote(str, Enum):
@@ -45,13 +47,17 @@ class Vote(str, Enum):
     ABSENT = "ABSENT"
 
 
-VOTE_VALID = Literal["VOTE_VALID"]  # vote value when multiple options are present
+VOTE_VALID = Literal[
+    "VOTE_VALID"
+]  # vote value when multiple options are present
 
 
 class MpVoteSchema(BaseModel):
     mp_term_id: int = Field(validation_alias="MP")
     party: Union[str, None] = Field(default=None, validation_alias="club")
-    votes: Union[dict[OptionIndex, Vote], None] = Field(default=None, validation_alias="listVotes")
+    votes: Union[dict[OptionIndex, Vote], None] = Field(
+        default=None, validation_alias="listVotes"
+    )
     vote: Union[Vote, VOTE_VALID]
 
 
@@ -62,14 +68,25 @@ class VotingWithMpVotesSchema(VotingSchema):
 class MpSchema(BaseModel):
     in_term_id: int = Field(validation_alias="id")
     first_name: str = Field(validation_alias="firstName")
-    second_name: Union[str, None] = Field(default=None, validation_alias="secondName")
+    second_name: Union[str, None] = Field(
+        default=None, validation_alias="secondName"
+    )
     last_name: str = Field(validation_alias="lastName")
     birth_date: date = Field(validation_alias="birthDate")
-    birth_place: Union[str, None] = Field(default=None, validation_alias="birthLocation")
-    education: Union[str, None] = Field(default=None, validation_alias="educationLevel")
+    birth_place: Union[str, None] = Field(
+        default=None, validation_alias="birthLocation"
+    )
+    education: Union[str, None] = Field(
+        default=None, validation_alias="educationLevel"
+    )
     profession: Union[str, None] = Field(default=None)
     voivodeship: Union[str, None] = Field(default=None)
     district_name: str = Field(validation_alias="districtName")
-    # Usualy both below are present, but sometimes only inactivity_description is present
-    inactivity_cause: Union[str, None] = Field(default=None, validation_alias="inactiveCause")
-    inactivity_description: Union[str, None] = Field(default=None, validation_alias="waiverDesc")
+    # Usualy both below are present, but sometimes
+    # only inactivity_description is present
+    inactivity_cause: Union[str, None] = Field(
+        default=None, validation_alias="inactiveCause"
+    )
+    inactivity_description: Union[str, None] = Field(
+        default=None, validation_alias="waiverDesc"
+    )

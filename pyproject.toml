@@ -71,17 +71,16 @@ lint.ignore = [
     "PLR0915",
     "D211",    # no-blank-line-before-class
     "D213",    # multi-line-summary-second-line
-    "ISC001"   # single-line-implicit-string-concatenation
-    ]
+    "ISC001",  # single-line-implicit-string-concatenation
+    "UP007",   # keep Union syntax for pydantic
+]
 lint.unfixable = [
     # Don't touch unused imports
     "F401",
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = [
-    "sejm_scraper"
-]
+known-first-party = ["sejm_scraper"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

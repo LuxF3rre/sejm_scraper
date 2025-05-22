@@ -1,6 +1,15 @@
 import os
 
-from sqlalchemy import CHAR, Column, Date, DateTime, ForeignKey, Integer, String, create_engine
+from sqlalchemy import (
+    CHAR,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 database_name = os.getenv("SEJM_SCRAPER_DATABASE", "postgres")
@@ -17,10 +26,10 @@ SessionMaker = sessionmaker(bind=engine)
 
 # Need to ignore the type of declariative_base for lack of better options
 # See: https://stackoverflow.com/questions/58325495/what-type-do-i-use-for-sqlalchemy-declarative-base
-Base = declarative_base()  # type: ignore
+Base = declarative_base()
 
 
-class Terms(Base):  # type: ignore
+class Terms(Base):
     __tablename__ = "Terms"
 
     id = Column(CHAR(64), primary_key=True)
@@ -33,7 +42,7 @@ class Terms(Base):  # type: ignore
     mp_to_term_link = relationship("MpToTermLink", back_populates="term")
 
 
-class Sittings(Base):  # type: ignore
+class Sittings(Base):
     __tablename__ = "Sittings"
 
     id = Column(CHAR(64), primary_key=True)
@@ -46,7 +55,7 @@ class Sittings(Base):  # type: ignore
     votings = relationship("Votings", back_populates="sitting")
 
 
-class Votings(Base):  # type: ignore
+class Votings(Base):
     __tablename__ = "Votings"
 
     id = Column(CHAR(64), primary_key=True)
@@ -63,7 +72,7 @@ class Votings(Base):  # type: ignore
     voting_options = relationship("VotingOptions", back_populates="voting")
 
 
-class VotingOptions(Base):  # type: ignore
+class VotingOptions(Base):
     __tablename__ = "VotingOptions"
 
     id = Column(CHAR(64), primary_key=True)
@@ -76,11 +85,13 @@ class VotingOptions(Base):  # type: ignore
     votes = relationship("Votes", back_populates="voting_option")
 
 
-class Votes(Base):  # type: ignore
+class Votes(Base):
     __tablename__ = "Votes"
 
     id = Column(CHAR(64), primary_key=True)
-    voting_option_id = Column(CHAR(64), ForeignKey("VotingOptions.id"), nullable=False)
+    voting_option_id = Column(
+        CHAR(64), ForeignKey("VotingOptions.id"), nullable=False
+    )
     mp_id = Column(CHAR(64), ForeignKey("MPs.id"), nullable=False)
 
     vote = Column(String, nullable=False)
@@ -90,7 +101,7 @@ class Votes(Base):  # type: ignore
     mp = relationship("MPs", back_populates="votes")
 
 
-class MPs(Base):  # type: ignore
+class MPs(Base):
     __tablename__ = "MPs"
 
     id = Column(CHAR(64), primary_key=True)
@@ -105,7 +116,7 @@ class MPs(Base):  # type: ignore
     mp_to_term_link = relationship("MpToTermLink", back_populates="mp")
 
 
-class MpToTermLink(Base):  # type: ignore
+class MpToTermLink(Base):
     __tablename__ = "MpToTermLink"
 
     id = Column(CHAR(64), primary_key=True)
