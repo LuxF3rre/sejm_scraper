@@ -1,3 +1,4 @@
+
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
@@ -17,21 +18,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up Python 3.12
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-python-
+
       - name: Install dependencies
         run: |
-          pipx install poetry
-          poetry install
-          poetry self add poetry-plugin-export
-          poetry export -f requirements.txt --output requirements.txt --with dev
-          pip install -r requirements.txt
+          uv venv
+          uv sync --all-extras
+          uv tool install ruff
+          uv tool install pytest
+          uv tool install ty
+
       - name: Lint with ruff
-        run: |
-          ruff check ./src/
-      - name: Test with mypy
-        run: |
-          mypy ./src/
+        run: uvx ruff check ./src/
+
+      - name: Test with ty
+        run: uvx ty check ./src/
+
+      - name: Test with pytest
+        run: uvx pytest
