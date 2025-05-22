@@ -1,0 +1,15 @@
+{
+  "template": "https://github.com/LuxF3rre/cookiecutter_python",
+  "commit": "92cc76c73e2aeef8fe97449d31be1d591fe97eaa",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "sejm_scraper",
+      "project_description": "",
+      "project_slug": "sejm_scraper",
+      "_template": "https://github.com/LuxF3rre/cookiecutter_python",
+      "_commit": "92cc76c73e2aeef8fe97449d31be1d591fe97eaa"
+    }
+  },
+  "directory": null
+}
