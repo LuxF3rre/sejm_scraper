@@ -49,7 +49,6 @@ def bulk_insert_data(
     table_name: str,
     data: List[Dict[str, Any]],
     column_order: List[str],
-    chunk_size: int = 100,
 ) -> None:
     if not data:
         return
@@ -77,14 +76,12 @@ def bulk_insert_data(
     placeholders = ", ".join(["?"] * len(column_order))
     insert_query = f"INSERT INTO {table_name} ({', '.join(column_order)}) VALUES ({placeholders})"
 
-    for i in range(0, len(tuples_to_insert), chunk_size):
-        chunk = tuples_to_insert[i : i + chunk_size]
-        try:
-            conn.executemany(insert_query, chunk)
-            logger.debug(f"Inserted chunk of {len(chunk)} rows into {table_name}")
-        except Exception as e:
-            logger.error(f"Error inserting chunk into {table_name}: {e}")
-            # Depending on the error, might want to retry or handle specific exceptions
+    try:
+        conn.executemany(insert_query, tuples_to_insert)
+        logger.debug(f"Inserted {len(tuples_to_insert)} rows into {table_name}")
+    except Exception as e:
+        logger.error(f"Error inserting data into {table_name}: {e}")
+        # Depending on the error, might want to retry or handle specific exceptions
     logger.info(f"Finished bulk inserting into {table_name}")
 
 
