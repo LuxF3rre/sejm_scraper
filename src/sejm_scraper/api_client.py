@@ -11,64 +11,56 @@ retry_settings = {
 
 
 @retry(**retry_settings)
-def get_terms(client: httpx.Client) -> list[schemas.TermSchema]:
-    result = (
-        client.get("https://api.sejm.gov.pl/sejm/term", timeout=30)
-        .raise_for_status()
-        .json()
-    )
+async def get_terms(client: httpx.AsyncClient) -> list[schemas.TermSchema]:
+    response = await client.get("https://api.sejm.gov.pl/sejm/term", timeout=30)
+    response.raise_for_status()
+    result = response.json()
     return [schemas.TermSchema(**item) for item in result]
 
 
 @retry(**retry_settings)
-def get_sittings(
-    client: httpx.Client, term: int
+async def get_sittings(
+    client: httpx.AsyncClient, term: int
 ) -> list[schemas.SittingSchema]:
-    result = (
-        client.get(
-            f"https://api.sejm.gov.pl/sejm/term{term}/proceedings", timeout=30
-        )
-        .raise_for_status()
-        .json()
+    response = await client.get(
+        f"https://api.sejm.gov.pl/sejm/term{term}/proceedings", timeout=30
     )
+    response.raise_for_status()
+    result = response.json()
     return [schemas.SittingSchema(**item) for item in result]
 
 
 @retry(**retry_settings)
-def get_votings(
-    client: httpx.Client, term: int, sitting: int
+async def get_votings(
+    client: httpx.AsyncClient, term: int, sitting: int
 ) -> list[schemas.VotingSchema]:
-    result = (
-        client.get(
-            f"https://api.sejm.gov.pl/sejm/term{term}/votings/{sitting}",
-            timeout=30,
-        )
-        .raise_for_status()
-        .json()
+    response = await client.get(
+        f"https://api.sejm.gov.pl/sejm/term{term}/votings/{sitting}",
+        timeout=30,
     )
+    response.raise_for_status()
+    result = response.json()
     return [schemas.VotingSchema(**item) for item in result]
 
 
 @retry(**retry_settings)
-def get_votes(
-    client: httpx.Client, term: int, sitting: int, voting: int
+async def get_votes(
+    client: httpx.AsyncClient, term: int, sitting: int, voting: int
 ) -> schemas.VotingWithMpVotesSchema:
-    result = (
-        client.get(
-            f"https://api.sejm.gov.pl/sejm/term{term}/votings/{sitting}/{voting}",
-            timeout=30,
-        )
-        .raise_for_status()
-        .json()
+    response = await client.get(
+        f"https://api.sejm.gov.pl/sejm/term{term}/votings/{sitting}/{voting}",
+        timeout=30,
     )
+    response.raise_for_status()
+    result = response.json()
     return schemas.VotingWithMpVotesSchema(**result)
 
 
 @retry(**retry_settings)
-def get_mps(client: httpx.Client, term: int) -> list[schemas.MpSchema]:
-    result = (
-        client.get(f"https://api.sejm.gov.pl/sejm/term{term}/MP", timeout=30)
-        .raise_for_status()
-        .json()
+async def get_mps(client: httpx.AsyncClient, term: int) -> list[schemas.MpSchema]:
+    response = await client.get(
+        f"https://api.sejm.gov.pl/sejm/term{term}/MP", timeout=30
     )
+    response.raise_for_status()
+    result = response.json()
     return [schemas.MpSchema(**item) for item in result]
