@@ -47,9 +47,8 @@ class Vote(str, Enum):
     ABSENT = "ABSENT"
 
 
-VOTE_VALID = Literal[
-    "VOTE_VALID"
-]  # vote value when multiple options are present
+# vote value when multiple options are present
+VOTE_VALID = Literal["VOTE_VALID"]
 
 
 class MpVoteSchema(BaseModel):

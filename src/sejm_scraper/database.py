@@ -24,8 +24,6 @@ engine = create_engine(
 
 SessionMaker = sessionmaker(bind=engine)
 
-# Need to ignore the type of declariative_base for lack of better options
-# See: https://stackoverflow.com/questions/58325495/what-type-do-i-use-for-sqlalchemy-declarative-base
 Base = declarative_base()
 
 
