@@ -1,0 +1,5 @@
+{
+  "ty.interpreter": ["${workspaceFolder}/.devenv/state/venv/bin/python"],
+  "ty.importStrategy": "fromEnvironment"],
+  "python.defaultInterpreterPath": "${workspaceFolder}/.devenv/state/venv/bin/python"
+}
