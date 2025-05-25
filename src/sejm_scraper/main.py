@@ -62,7 +62,6 @@ async def _fetch_and_process_votings_for_sittings(
     sittings_batch: List[schemas.SittingSchema],
     conn: Any, # DuckDB connection
     mp_id_lookup: Dict[int, str], # in_term_id -> mp_id for the current term
-    chunk_size: int,
     semaphore: asyncio.Semaphore,
     from_voting_num: Optional[int],
 ):
@@ -155,11 +154,11 @@ async def _fetch_and_process_votings_for_sittings(
 
     # Bulk insert collected data for this batch of sittings
     if processed_votings_data:
-        process.bulk_insert_data(conn, "Votings", processed_votings_data, process.VOTINGS_COLUMN_ORDER, chunk_size)
+        process.bulk_insert_data(conn, "Votings", processed_votings_data, process.VOTINGS_COLUMN_ORDER)
     if processed_voting_options_data:
-        process.bulk_insert_data(conn, "VotingOptions", processed_voting_options_data, process.VOTING_OPTIONS_COLUMN_ORDER, chunk_size)
+        process.bulk_insert_data(conn, "VotingOptions", processed_voting_options_data, process.VOTING_OPTIONS_COLUMN_ORDER)
     if processed_votes_data:
-        process.bulk_insert_data(conn, "Votes", processed_votes_data, process.VOTES_COLUMN_ORDER, chunk_size)
+        process.bulk_insert_data(conn, "Votes", processed_votes_data, process.VOTES_COLUMN_ORDER)
 
 
 # Store from_point details globally for access in helper functions if needed, or pass them down.
@@ -180,7 +179,6 @@ async def scrape(
         ),
     ] = None,
     parallelism_limit: Annotated[int, typer.Option(help="Max concurrent API calls.")] = 10,
-    chunk_size: Annotated[int, typer.Option(help="Rows per bulk insert chunk.")] = 100,
 ) -> None:
     global current_from_term_num, current_from_sitting_num, current_from_voting_num, semaphore_value
     semaphore_value = parallelism_limit
@@ -216,7 +214,7 @@ async def scrape(
             return
 
         processed_terms_data = [process.process_term(t) for t in terms_to_process]
-        process.bulk_insert_data(conn, "Terms", processed_terms_data, process.TERMS_COLUMN_ORDER, chunk_size)
+        process.bulk_insert_data(conn, "Terms", processed_terms_data, process.TERMS_COLUMN_ORDER)
         logger.info(f"Processed and inserted {len(processed_terms_data)} terms.")
 
         for term_schema in terms_to_process:
@@ -232,8 +230,8 @@ async def scrape(
             else:
                 processed_mps_data = [process.process_mp(mp) for mp in raw_mps] # Pass term_schema if needed by process_mp
                 processed_mp_links_data = [process.process_mp_to_term_link(mp, term_schema) for mp in raw_mps]
-                process.bulk_insert_data(conn, "MPs", processed_mps_data, process.MPS_COLUMN_ORDER, chunk_size)
-                process.bulk_insert_data(conn, "MpToTermLink", processed_mp_links_data, process.MP_TO_TERM_LINK_COLUMN_ORDER, chunk_size)
+                process.bulk_insert_data(conn, "MPs", processed_mps_data, process.MPS_COLUMN_ORDER)
+                process.bulk_insert_data(conn, "MpToTermLink", processed_mp_links_data, process.MP_TO_TERM_LINK_COLUMN_ORDER)
                 logger.info(f"Processed and inserted {len(processed_mps_data)} MPs and links for term {term_schema.number}.")
 
             # Create mp_id_lookup for this term (in_term_id -> mp_id)
@@ -265,7 +263,7 @@ async def scrape(
             processed_sittings_data = [s_data for s_data in processed_sittings_data if s_data is not None]
 
             if processed_sittings_data:
-                 process.bulk_insert_data(conn, "Sittings", processed_sittings_data, process.SITTINGS_COLUMN_ORDER, chunk_size)
+                 process.bulk_insert_data(conn, "Sittings", processed_sittings_data, process.SITTINGS_COLUMN_ORDER)
                  logger.info(f"Processed and inserted {len(processed_sittings_data)} sittings for term {term_schema.number}.")
             
             # VOTINGS and VOTES (Processed in batches of sittings)
@@ -282,7 +280,6 @@ async def scrape(
                 sittings_to_process, # Pass the filtered list of sitting schema objects
                 conn,
                 mp_id_lookup,
-                chunk_size,
                 semaphore, # Pass the original semaphore for it to manage sub-tasks
                 current_from_voting_num if term_schema.number == current_from_term_num and current_from_sitting_num is not None else None,
             )
@@ -309,7 +306,6 @@ async def scrape(
 @app.command()
 async def resume(
     parallelism_limit: Annotated[int, typer.Option(help="Max concurrent API calls.")] = 10,
-    chunk_size: Annotated[int, typer.Option(help="Rows per bulk insert chunk.")] = 100,
 ) -> None:
     logger.info("Attempting to resume scraping...")
     conn = get_duckdb_connection()
@@ -319,7 +315,7 @@ async def resume(
         latest_term_row = conn.execute("SELECT MAX(number) FROM Terms").fetchone()
         if latest_term_row is None or latest_term_row[0] is None:
             logger.info("No existing data found. Starting full scrape.")
-            await scrape(from_point=None, parallelism_limit=parallelism_limit, chunk_size=chunk_size)
+            await scrape(from_point=None, parallelism_limit=parallelism_limit)
             return
 
         latest_term_number = latest_term_row[0]
@@ -352,7 +348,7 @@ async def resume(
                 from_point_str = f"{latest_term_number},{latest_sitting_number},{latest_voting_number}"
                 logger.info(f"Resuming from term {latest_term_number}, sitting {latest_sitting_number}, voting {latest_voting_number}.")
         
-        await scrape(from_point=from_point_str, parallelism_limit=parallelism_limit, chunk_size=chunk_size)
+        await scrape(from_point=from_point_str, parallelism_limit=parallelism_limit)
 
     except Exception as e:
         logger.opt(exception=True).error(f"Error during resume operation: {e}")
