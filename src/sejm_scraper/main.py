@@ -170,8 +170,7 @@ current_from_voting_num: Optional[int] = None
 semaphore_value: int = 10 # Default, will be updated by scrape function parameter
 
 
-@app.command()
-async def scrape(
+async def _scrape_async(
     from_point: Annotated[
         Union[str, None],
         typer.Option(
@@ -304,7 +303,19 @@ async def scrape(
 
 
 @app.command()
-async def resume(
+def scrape(
+    from_point: Annotated[
+        Union[str, None],
+        typer.Option(
+            help="In form of term[,sitting[,voting]], e.g. 10,13,35; 10,13; 10"
+        ),
+    ] = None,
+    parallelism_limit: Annotated[int, typer.Option(help="Max concurrent API calls.")] = 10,
+) -> None:
+    asyncio.run(_scrape_async(from_point=from_point, parallelism_limit=parallelism_limit))
+
+
+async def _resume_async(
     parallelism_limit: Annotated[int, typer.Option(help="Max concurrent API calls.")] = 10,
 ) -> None:
     logger.info("Attempting to resume scraping...")
@@ -315,7 +326,11 @@ async def resume(
         latest_term_row = conn.execute("SELECT MAX(number) FROM Terms").fetchone()
         if latest_term_row is None or latest_term_row[0] is None:
             logger.info("No existing data found. Starting full scrape.")
-            await scrape(from_point=None, parallelism_limit=parallelism_limit)
+            # Since scrape is now synchronous, we don't need to await it.
+            # However, the original logic called the ASYNC version of scrape.
+            # For consistency with the refactoring pattern, _resume_async
+            # should call the async version _scrape_async.
+            await _scrape_async(from_point=None, parallelism_limit=parallelism_limit)
             return
 
         latest_term_number = latest_term_row[0]
@@ -348,13 +363,20 @@ async def resume(
                 from_point_str = f"{latest_term_number},{latest_sitting_number},{latest_voting_number}"
                 logger.info(f"Resuming from term {latest_term_number}, sitting {latest_sitting_number}, voting {latest_voting_number}.")
         
-        await scrape(from_point=from_point_str, parallelism_limit=parallelism_limit)
+        # Similarly, call the async version _scrape_async here.
+        await _scrape_async(from_point=from_point_str, parallelism_limit=parallelism_limit)
 
     except Exception as e:
         logger.opt(exception=True).error(f"Error during resume operation: {e}")
     finally:
         if conn:
             conn.close()
+
+@app.command()
+def resume(
+    parallelism_limit: Annotated[int, typer.Option(help="Max concurrent API calls.")] = 10,
+) -> None:
+    asyncio.run(_resume_async(parallelism_limit=parallelism_limit))
 
 
 if __name__ == "__main__":
