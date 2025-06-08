@@ -14,20 +14,6 @@ in
     pkgs-unstable.ty
   ];
 
-  services.postgres = {
-    enable = true;
-    package = pkgs-unstable.postgresql;
-    initialDatabases = [
-      {
-        name = "postgres";
-        user = "postgres";
-        pass = "postgres";
-      }
-    ];
-    listen_addresses = "127.0.0.1";
-    port = 5432;
-  };
-
   languages.python = {
     enable = true;
     version = "3.12";
@@ -40,6 +26,8 @@ in
       };
     };
   };
+
+  dotenv.enable = true;
 
   git-hooks.hooks = {
     ruff.enable = true;
@@ -63,10 +51,14 @@ in
     ty = {
       enable = true;
       name = "ty static analysis";
-      entry = "ty check ./src/ --python .devenv/state/venv/bin/python";
+      entry = "ty check";
       language = "system";
     };
   };
 
-  scripts.ty-check.exec = "ty check $DEVENV_ROOT/src/ --python $UV_PROJECT_ENVIRONMENT/bin/python";
+  enterShell = ''
+    uv venv
+    source .devenv/state/venv/bin/activate
+    uv sync
+  '';
 }

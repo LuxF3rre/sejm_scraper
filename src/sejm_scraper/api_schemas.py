@@ -12,8 +12,8 @@ class TermSchema(BaseModel):
 
 
 class SittingSchema(BaseModel):
-    title: str
-    number: int
+    title: str = Field()
+    number: int = Field()
 
 
 OptionIndex = NewType("OptionIndex", int)
@@ -25,16 +25,14 @@ class VotingOptionSchema(BaseModel):
 
 
 class VotingSchema(BaseModel):
-    term: int
-    sitting: int
+    term: int = Field()
+    sitting: int = Field()
     sitting_day: int = Field(validation_alias="sittingDay")
     number: int = Field(validation_alias="votingNumber")
-    date: datetime
-
-    title: str
+    date: datetime = Field()
+    title: str = Field()
     description: Union[str, None] = Field(default=None)
     topic: Union[str, None] = Field(default=None)
-
     voting_options: Union[list[VotingOptionSchema], None] = Field(
         default=None, validation_alias="votingOptions"
     )
@@ -51,11 +49,13 @@ class Vote(str, Enum):
 # vote value when multiple options are present
 VOTE_VALID = Literal["VOTE_VALID"]
 
+MpTermId = NewType("MpTermId", int)
+
 
 class MpVoteSchema(BaseModel):
-    mp_term_id: int = Field(validation_alias="MP")
+    mp_term_id: MpTermId = Field(validation_alias="MP")
     party: Union[str, None] = Field(default=None, validation_alias="club")
-    votes: Union[dict[OptionIndex, Vote], None] = Field(
+    multiple_option_votes: Union[dict[OptionIndex, Vote], None] = Field(
         default=None, validation_alias="listVotes"
     )
     vote: Union[Vote, VOTE_VALID]
@@ -82,8 +82,8 @@ class MpSchema(BaseModel):
     profession: Union[str, None] = Field(default=None)
     voivodeship: Union[str, None] = Field(default=None)
     district_name: str = Field(validation_alias="districtName")
-    # Usualy both below are present, but sometimes
-    # only inactivity_description is present
+    # Usually both fields are present, but sometimes
+    # only inactivity_description field is present
     inactivity_cause: Union[str, None] = Field(
         default=None, validation_alias="inactiveCause"
     )
