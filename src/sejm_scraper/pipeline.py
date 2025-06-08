@@ -84,7 +84,7 @@ def resume_pipeline() -> None:
     with sqlmodel.Session(database.ENGINE) as database_client:
         last_term = database_client.exec(
             sqlmodel.select(database.Term).order_by(
-                sqlmodel.desc(database.Term.number)
+                sqlmodel.desc(database.Term.number)  # ty: ignore
             )
         ).first()
         if last_term is None:
@@ -93,7 +93,7 @@ def resume_pipeline() -> None:
             last_sitting = database_client.exec(
                 sqlmodel.select(database.Sitting)
                 .where(database.Sitting.term_id == last_term.id)
-                .order_by(sqlmodel.desc(database.Sitting.number))
+                .order_by(sqlmodel.desc(database.Sitting.number))  # ty: ignore
             ).first()
             if last_sitting is None:
                 pipeline(from_term=last_term.number)
@@ -101,7 +101,9 @@ def resume_pipeline() -> None:
                 last_voting = database_client.exec(
                     sqlmodel.select(database.Voting)
                     .where(database.Voting.sitting_id == last_sitting.id)
-                    .order_by(sqlmodel.desc(database.Voting.number))
+                    .order_by(
+                        sqlmodel.desc(database.Voting.number)  # ty: ignore
+                    )
                 ).first()
                 if last_voting is None:
                     pipeline(
