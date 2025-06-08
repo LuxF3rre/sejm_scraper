@@ -32,7 +32,7 @@ def pipeline(
             database_client.merge(term)
         database_client.commit()
 
-        # Sittings
+        # Mps & Sittings
         for term in terms:
             scraped_mps = scrape.scrape_mps(client=http_client, term=term)
             for mp in scraped_mps.mps:
