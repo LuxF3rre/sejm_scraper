@@ -41,7 +41,7 @@ jobs:
         run: uvx ruff check ./src/
 
       - name: Test with ty
-        run: uvx ty check ./src/ --python ./venv/bin/
+        run: uvx ty check ./src/ --python ./.venv/bin/
 
       - name: Test with pytest
         run: uvx pytest
