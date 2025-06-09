@@ -50,25 +50,25 @@ To ensure accurate and reliable analysis, it's crucial to deduplicate these entr
 
 ## Installation & usage
 
-### 0. Requirements:
+### 0. Requirements
 
 - Python 3.12
 - [Poetry](https://python-poetry.org/) (optional)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (not required if you have Postgres database ready)
 
-### 1. **Clone the repository:**
+### 1. Clone the repository
 
 ```console
 https://github.com/LuxF3rre/sejm_scraper
 ```
 
-### 2. Navigate to the project directory:
+### 2. Navigate to the project directory
 
 ```console
 cd sejm_scraper
 ```
 
-### 3. Install dependencies:
+### 3. Install dependencies
 
 ```console
 pip install -r requirements.txt
@@ -94,7 +94,7 @@ poetry shell
 poetry install --with dev
 ```
 
-### 4. Set up the database:
+### 4. Set up the database
 
 If you don't have Postgres database ready run:
 
@@ -110,7 +110,7 @@ If you have Postgres database ready set the connection through these environment
 - `SEJM_SCRAPER_USER`
 - `SEJM_SCRAPER_PASSWORD`
 
-### 5. Create tables in the database:
+### 5. Create tables in the database
 
 ```console
 python ./src/sejm_scraper/main.py prepare-database
@@ -122,7 +122,7 @@ If you have poetry:
 sejm-scraper prepare-database
 ```
 
-### 6. Start scraping:
+### 6. Start scraping
 
 ```console
 python ./src/sejm_scraper/main.py scrape
@@ -134,7 +134,7 @@ If you have poetry:
 sejm-scraper scrape
 ```
 
-### 7. Resume scraping:
+### 7. Resume scraping
 
 #### From the latest available point in the database
 
@@ -160,7 +160,7 @@ If you have poetry:
 sejm-scraper scrape --from-point term[,sitting[,voting]]
 ```
 
-### 8. See help:
+### 8. See help
 
 ```console
 python ./src/sejm_scraper/main.py --help
