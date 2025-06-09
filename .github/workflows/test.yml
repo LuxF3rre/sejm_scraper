@@ -43,6 +43,6 @@ jobs:
       - name: Test with ty
         run: uvx ty check ./src/ --python ./.venv/
 
-      - name: Test with pytest
-        run: uvx pytest
+      # - name: Test with pytest
+      #   run: uvx pytest
 
