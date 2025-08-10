@@ -74,7 +74,8 @@ lint.ignore = [
     "D211",    # no-blank-line-before-class
     "D213",    # multi-line-summary-second-line
     "ISC001",  # single-line-implicit-string-concatenation
-    "UP007",   # keep Union syntax for pydantic
+    "UP007",   # allow Union syntax for pydantic
+    "UP045",   # allow Optional syntax for pydantic
 ]
 lint.unfixable = [
     # Don't touch unused imports
