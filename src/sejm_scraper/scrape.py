@@ -212,7 +212,7 @@ def scrape_votes(
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
                     ),
-                    mp_term_id=vote.mp_term_id,
+                    mp_in_term_id=vote.mp_term_id,
                     vote=vote.vote,
                     party=vote.party,
                 )
@@ -235,7 +235,7 @@ def scrape_votes(
                             voting=voting,
                             voting_option_index=voting_option,
                         ),
-                        mp_term_id=vote.mp_term_id,
+                        mp_in_term_id=vote.mp_term_id,
                         vote=inner_vote,
                         party=vote.party,
                     )
