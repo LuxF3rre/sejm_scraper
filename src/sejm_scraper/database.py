@@ -3,7 +3,7 @@ from typing import Union
 
 from sqlmodel import Field, SQLModel, create_engine
 
-from sejm_scraper.api_schemas import Vote
+from sejm_scraper import api_schemas
 
 DUCKDB_URL = "duckdb:///sejm_scraper.duckdb"
 ENGINE = create_engine(DUCKDB_URL, echo=True)
@@ -45,7 +45,7 @@ class Vote(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
     mp_term_id: int
-    vote: Vote
+    vote: api_schemas.Vote
     party: Union[str, None]
 
 
