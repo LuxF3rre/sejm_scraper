@@ -32,7 +32,7 @@ def fetch_votes(
 
 
 @retry(**RETRY_SETTINGS)
-def _fetch_list(
+def _fetch_list[T: BaseModel](
     client: httpx.Client,
     path: str,
     model: type[T],
