@@ -36,7 +36,7 @@ def generate_voting_natural_key(
     return _generate_hash(
         term.number,
         sitting.number,
-        voting.sitting_day,
+        voting.day_number,
         voting.number,
         voting.date,
     )
@@ -51,7 +51,7 @@ def generate_voting_option_natural_key(
     return _generate_hash(
         term.number,
         sitting.number,
-        voting.sitting_day,
+        voting.day_number,
         voting.number,
         voting.date,
         voting_option_index,
@@ -68,7 +68,7 @@ def generate_vote_natural_key(
     return _generate_hash(
         term.number,
         sitting.number,
-        voting.sitting_day,
+        voting.day_number,
         voting.number,
         voting.date,
         voting_option_index,

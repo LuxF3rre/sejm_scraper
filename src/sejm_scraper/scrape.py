@@ -83,7 +83,7 @@ def scrape_votings(
             database.Voting(
                 id=voting_id,
                 sitting_id=sitting.id,
-                sitting_day=voting.sitting_day,
+                day_number=voting.day_number,
                 number=voting.number,
                 date=voting.date,
                 title=voting.title,

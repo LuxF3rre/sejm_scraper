@@ -26,8 +26,8 @@ class Sitting(SQLModel, table=True):
 class Voting(SQLModel, table=True):
     id: str = Field(primary_key=True)
     sitting_id: str = Field(foreign_key="sitting.id")
-    sitting_day: int
     number: int
+    day_number: int
     date: date
     title: str
     description: Union[str, None]

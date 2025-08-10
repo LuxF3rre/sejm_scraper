@@ -27,8 +27,8 @@ class VotingOptionSchema(BaseModel):
 class VotingSchema(BaseModel):
     term: int = Field()
     sitting: int = Field()
-    sitting_day: int = Field(validation_alias="sittingDay")
     number: int = Field(validation_alias="votingNumber")
+    day_number: int = Field(validation_alias="sittingDay")
     date: datetime = Field()
     title: str = Field()
     description: Union[str, None] = Field(default=None)
