@@ -43,6 +43,7 @@ class Vote(str, Enum):
     NO = "NO"
     ABSTAIN = "ABSTAIN"
     ABSENT = "ABSENT"
+    PRESENT = "PRESENT"
 
 
 VOTE_VALID = Literal["VOTE_VALID"]  # vote value when multiple options are present
