@@ -6,7 +6,7 @@ import sqlmodel
 from sejm_scraper import database, scrape
 
 
-def pipeline(
+def start_pipeline(
     from_term: Optional[int] = None,
     from_sitting: Optional[int] = None,
     from_voting: Optional[int] = None,
@@ -88,7 +88,7 @@ def resume_pipeline() -> None:
             )
         ).first()
         if last_term is None:
-            pipeline()
+            start_pipeline()
         else:
             last_sitting = database_client.exec(
                 sqlmodel.select(database.Sitting)
@@ -96,7 +96,7 @@ def resume_pipeline() -> None:
                 .order_by(sqlmodel.desc(database.Sitting.number))  # ty: ignore
             ).first()
             if last_sitting is None:
-                pipeline(from_term=last_term.number)
+                start_pipeline(from_term=last_term.number)
             else:
                 last_voting = database_client.exec(
                     sqlmodel.select(database.Voting)
@@ -106,12 +106,12 @@ def resume_pipeline() -> None:
                     )
                 ).first()
                 if last_voting is None:
-                    pipeline(
+                    start_pipeline(
                         from_term=last_term.number,
                         from_sitting=last_sitting.number,
                     )
                 else:
-                    pipeline(
+                    start_pipeline(
                         from_term=last_term.number,
                         from_sitting=last_sitting.number,
                         from_voting=last_voting.number,
