@@ -60,5 +60,6 @@ in
     uv venv
     source .devenv/state/venv/bin/activate
     uv sync
+    uv pip install -e .
   '';
 }
