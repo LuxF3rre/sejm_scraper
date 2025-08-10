@@ -86,7 +86,7 @@ erDiagram
     MpInTerm {
         string id PK
         string term_id FK
-        int in_term_id
+        int in_term_id UK
         string first_name
         string second_name "nullable"
         string last_name

@@ -52,7 +52,7 @@ class Vote(SQLModel, table=True):
 class MpInTerm(SQLModel, table=True):
     id: str = Field(primary_key=True)
     term_id: str = Field(foreign_key="term.id")
-    in_term_id: int
+    in_term_id: int = Field(unique=True)
     first_name: str
     second_name: Union[str, None]
     last_name: str
