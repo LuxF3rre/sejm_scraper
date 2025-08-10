@@ -1,11 +1,11 @@
 # Sejm Scraper
 
-[![building - Poetry](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/python-poetry/website/main/static/badge/v0.json)](https://python-poetry.org/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![code style - black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![code style - Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![imports - isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
-[![mypy - checked](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy-lang.org/)
-[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml)
+[![ty - checked](https://img.shields.io/badge/ty-checked-green)](https://github.com/astral-sh/ty)
+[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml)
 
 ## Overview
 
@@ -16,160 +16,158 @@ The [Sejm API](https://api.sejm.gov.pl/) facilitates access to comprehensive det
 - Inconsistent handling of votings that involve single or multiple voting options.
 - MPs are defined per term rather than being treated as continuous entities across different terms.
 
-These limitations can hinder efficient data analysis as the API's response times are slow and it necessitates a high volume of requests, which is time-consuming.
-
 To address these issues, the following solutions have been implemented:
 
 - Creation of a database that includes tables with [natural keys](https://en.wikipedia.org/wiki/Natural_key), utilizing SHA-256 for hashing and enforced key constraints.
-- Implementation of API response schema validation alongside stringent null constraints within the database.
+- Implementation of API response schema validation alongside null constraints within the database.
 - Normalization of votings to accommodate single-option scenarios uniformly.
-- Refinement of MP entries into a global entity spanning multiple terms.
 
 Furthermore, maintaining a local copy of the data ensures rapid access to the entire dataset, significantly enhancing analysis capabilities.
 
 ### Data quality notes
 
-The Sejm API models MPs on a term-by-term basis rather than maintaining a continuous, global MP entity. In contrast, the enhanced data model treats each MP as a global object. This difference introduces potential duplication in our data due to various inconsistencies originating from the Sejm API, including:
+The Sejm API models MPs on a term-by-term basis rather than maintaining a continuous, global MP entity. Turning them into continuous entities is not a trival issue due to various inconsistencies originating from the Sejm API, including:
 
 - Data entry errors, such as typos or inconsistent naming of birthplaces.
 - Changes in an MP's last name, commonly due to marriage.
 - Previously missing fields that have been added later and are integral to our primary key, like birthplace.
 
-To ensure accurate and reliable analysis, it's crucial to deduplicate these entries.
-
 ## Features
 
-- [x] Built with **🐍Python** and **Postgres** on **🐋Docker**.
+- [x] Built with **🐍Python** and **🦆DuckDB**.
 - [x] Normalized data model with primary keys, foreign keys, and not null constrains.
-- [x] Fast and realiable processing thanks to the custom client for [Sejm API](https://api.sejm.gov.pl/sejm/openapi/ui).
+- [x] Fast and reliable processing thanks to the custom client for [Sejm API](https://api.sejm.gov.pl/sejm/openapi/ui).
 - [x] Able to resume work from a given term, sitting, and voting.
 
 ## Data model
 
-![Data model](resources/data_model.png)
+```mermaid
+erDiagram
+    Term {
+        string id PK
+        int number
+        date from_date
+        date to_date "nullable"
+    }
+
+    Sitting {
+        string id PK
+        string term_id FK
+        string title
+        int number
+    }
+
+    Voting {
+        string id PK
+        string sitting_id FK
+        int number
+        int day_number
+        date date
+        string title
+        string description "nullable"
+        string topic "nullable"
+    }
+
+    VotingOption {
+        string id PK
+        string voting_id FK
+        int index
+        string description "nullable"
+    }
+
+    Vote {
+        string id PK
+        string voting_option_id FK
+        int mp_term_id FK
+        string vote
+        string party "nullable"
+    }
+
+    MpInTerm {
+        string id PK
+        string term_id FK
+        int in_term_id
+        string first_name
+        string second_name "nullable"
+        string last_name
+        date birth_date
+        string birth_place "nullable"
+        string education "nullable"
+        string profession "nullable"
+        string voivodeship "nullable"
+        string district_name
+        string inactivity_cause "nullable"
+        string inactivity_description "nullable"
+    }
+
+    %% Relationships
+    Term ||--o{ Sitting : "contains"
+    Term ||--o{ MpInTerm : "has"
+    Sitting ||--o{ Voting : "contains"
+    Voting ||--o{ VotingOption : "has"
+    VotingOption ||--o{ Vote : "receives"
+    MpInTerm ||--o{ Vote : "casts"
+```
 
 ## Installation & usage
 
 ### 0. Requirements
 
+- git
 - Python 3.12
-- [Poetry](https://python-poetry.org/) (optional)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (not required if you have Postgres database ready)
 
-### 1. Clone the repository
+### 1. Clone and navigate into the repository
 
 ```console
-https://github.com/LuxF3rre/sejm_scraper
+git clone https://github.com/LuxF3rre/sejm_scraper && cd sejm_scraper
 ```
 
-### 2. Navigate to the project directory
-
-```console
-cd sejm_scraper
-```
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```console
 pip install -r requirements.txt
+pip install -e .
 ```
 
-For development requirements as well:
+If you have uv:
 
 ```console
-pip install -r requirements-dev.txt
+uv venv
+source .venv/bin/activate
+uv sync
+uv pip install -e .
 ```
 
-If you have poetry:
+### 3. Create the database
 
 ```console
-poetry shell
-poetry install
+python -m sejm-scraper prepare-database
 ```
 
-For development requirements as well:
+### 4. Start scraping
 
 ```console
-poetry shell
-poetry install --with dev
+python -m sejm-scraper start-pipeline
 ```
 
-### 4. Set up the database
-
-If you don't have Postgres database ready run:
-
-```console
-docker-compose up -d
-```
-
-If you have Postgres database ready set the connection through these environmental variables:
-
-- `SEJM_SCRAPER_HOST`
-- `SEJM_SCRAPER_PORT`
-- `SEJM_SCRAPER_DATABASE`
-- `SEJM_SCRAPER_USER`
-- `SEJM_SCRAPER_PASSWORD`
-
-### 5. Create tables in the database
-
-```console
-python ./src/sejm_scraper/main.py prepare-database
-```
-
-If you have poetry:
-
-```console
-sejm-scraper prepare-database
-```
-
-### 6. Start scraping
-
-```console
-python ./src/sejm_scraper/main.py scrape
-```
-
-If you have poetry:
-
-```console
-sejm-scraper scrape
-```
-
-### 7. Resume scraping
+### 5. Resume scraping
 
 #### From the latest available point in the database
 
 ```console
-python ./src/sejm_scraper/main.py resume
-```
-
-If you have poetry:
-
-```console
-sejm-scraper resume
+python -m sejm-scraper resume-pipeline
 ```
 
 #### From a specific point
 
 ```console
-python ./src/sejm_scraper/main.py scrape --from-point term[,sitting[,voting]]
+python -m sejm-scraper resume-pipeline --term <number> [--sitting <number> [--voting <number>]]
 ```
 
-If you have poetry:
+### 6. See help
 
 ```console
-sejm-scraper scrape --from-point term[,sitting[,voting]]
-```
-
-### 8. See help
-
-```console
-python ./src/sejm_scraper/main.py --help
-```
-
-If you have poetry:
-
-```console
-sejm-scraper --help
+python -m sejm-scraper --help
 ```
 
 ## Limitations
@@ -179,6 +177,7 @@ This project's scope is constrained by the data availability from the Sejm API:
 1. Absence of MP data for term 2.
 2. Limited to only term and MP data for terms 3 through 7 and votes data from term 8 onwards.
 3. Absence of exact dates of becoming active or inactive for MPs as well as changing the party.
+4. MP data bounded to terms, instead of treating them as continuous enitities.
 
 To address the first two gaps, future development efforts should aim to source the missing data directly from the Sejm's official website. The data is not exposed directly on the webpage, but can be obtained by using the following URL pattern:
 
