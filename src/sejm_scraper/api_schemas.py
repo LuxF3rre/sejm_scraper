@@ -49,11 +49,11 @@ class Vote(str, Enum):
 # vote value when multiple options are present
 VOTE_VALID = Literal["VOTE_VALID"]
 
-MpTermId = NewType("MpTermId", int)
+MpInTermId = NewType("MpInTermId", int)
 
 
 class MpVoteSchema(BaseModel):
-    mp_term_id: MpTermId = Field(validation_alias="MP")
+    mp_term_id: MpInTermId = Field(validation_alias="MP")
     party: Union[str, None] = Field(default=None, validation_alias="club")
     multiple_option_votes: Union[dict[OptionIndex, Vote], None] = Field(
         default=None, validation_alias="listVotes"
@@ -65,7 +65,7 @@ class VotingWithMpVotesSchema(VotingSchema):
     mp_votes: list[MpVoteSchema] = Field(validation_alias="votes")
 
 
-class MpSchema(BaseModel):
+class MpInTermSchema(BaseModel):
     in_term_id: int = Field(validation_alias="id")
     first_name: str = Field(validation_alias="firstName")
     second_name: Union[str, None] = Field(

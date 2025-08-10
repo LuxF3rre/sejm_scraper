@@ -78,12 +78,12 @@ def fetch_votings(
 
 
 @retry(**RETRY_SETTINGS)
-def fetch_mps(
+def fetch_mps_in_term(
     client: httpx.Client,
     term: int,
-) -> list[api_schemas.MpSchema]:
+) -> list[api_schemas.MpInTermSchema]:
     return _fetch_list(
         client=client,
         path=f"term{term}/MP",
-        model=api_schemas.MpSchema,
+        model=api_schemas.MpInTermSchema,
     )

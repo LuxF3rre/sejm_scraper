@@ -41,15 +41,6 @@ class VotingOption(SQLModel, table=True):
     description: Union[str, None]
 
 
-class Mp(SQLModel, table=True):
-    id: str = Field(primary_key=True)
-    first_name: str
-    second_name: Union[str, None]
-    last_name: str
-    birth_date: date
-    birth_place: Union[str, None]
-
-
 class Vote(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
@@ -58,11 +49,14 @@ class Vote(SQLModel, table=True):
     party: Union[str, None]
 
 
-class MpToTermLink(SQLModel, table=True):
+class MpInTerm(SQLModel, table=True):
     id: str = Field(primary_key=True)
-    mp_id: str = Field(foreign_key="mp.id")
-    term_id: str = Field(foreign_key="term.id")
     in_term_id: int
+    first_name: str
+    second_name: Union[str, None]
+    last_name: str
+    birth_date: date
+    birth_place: Union[str, None]
     education: Union[str, None]
     profession: Union[str, None]
     voivodeship: Union[str, None]

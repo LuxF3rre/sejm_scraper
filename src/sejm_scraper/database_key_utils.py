@@ -63,7 +63,7 @@ def generate_vote_natural_key(
     sitting: api_schemas.SittingSchema | database.Sitting,
     voting: api_schemas.VotingSchema | database.Voting,
     voting_option_index: api_schemas.OptionIndex,
-    mp_term_id: api_schemas.MpTermId,
+    mp_in_term_id: api_schemas.MpInTermId,
 ) -> str:
     return _generate_hash(
         term.number,
@@ -72,29 +72,15 @@ def generate_vote_natural_key(
         voting.number,
         voting.date,
         voting_option_index,
-        mp_term_id,
+        mp_in_term_id,
     )
 
 
-def generate_mp_natural_key(
-    mp: api_schemas.MpSchema | database.Mp,
-) -> str:
-    return _generate_hash(
-        mp.first_name,
-        mp.last_name,
-        mp.birth_date,
-        mp.birth_place,
-    )
-
-
-def generate_mp_to_term_link_natural_key(
-    mp: api_schemas.MpSchema | database.Mp,
+def generate_mp_in_term_natural_key(
     term: api_schemas.TermSchema | database.Term,
+    mp: api_schemas.MpInTermSchema | database.MpInTerm,
 ) -> str:
     return _generate_hash(
-        mp.first_name,
-        mp.last_name,
-        mp.birth_date,
-        mp.birth_place,
         term.number,
+        mp.in_term_id,
     )

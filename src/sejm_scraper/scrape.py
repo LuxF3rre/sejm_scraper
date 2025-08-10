@@ -128,42 +128,33 @@ def scrape_votings(
 
 
 @dataclass
-class ScrapedMpsResult:
-    mps: list[database.Mp]
-    mp_to_term_links: list[database.MpToTermLink]
+class ScrapedMpsInTermResult:
+    mps_in_term: list[database.MpInTerm]
 
 
-def scrape_mps(
+def scrape_mps_in_term(
     client: httpx.Client,
     term: database.Term,
-) -> ScrapedMpsResult:
-    mps = api_client.fetch_mps(client=client, term=term.number)
+) -> ScrapedMpsInTermResult:
+    mps_in_term = api_client.fetch_mps_in_term(client=client, term=term.number)
 
-    scraped_mps = []
-    mp_to_term_links = []
+    scraped_mps_in_term = []
 
-    for mp in mps:
-        mp_id = database_key_utils.generate_mp_natural_key(mp=mp)
+    for mp in mps_in_term:
+        mp_in_term_id = database_key_utils.generate_mp_in_term_natural_key(
+            term=term,
+            mp=mp,
+        )
 
-        scraped_mps.append(
-            database.Mp(
-                id=mp_id,
+        scraped_mps_in_term.append(
+            database.MpInTerm(
+                id=mp_in_term_id,
+                in_term_id=mp.in_term_id,
                 first_name=mp.first_name,
                 second_name=mp.second_name,
                 last_name=mp.last_name,
                 birth_date=mp.birth_date,
                 birth_place=mp.birth_place,
-            )
-        )
-
-        mp_to_term_links.append(
-            database.MpToTermLink(
-                id=database_key_utils.generate_mp_to_term_link_natural_key(
-                    mp=mp, term=term
-                ),
-                mp_id=mp_id,
-                term_id=term.id,
-                in_term_id=mp.in_term_id,
                 education=mp.education,
                 profession=mp.profession,
                 voivodeship=mp.voivodeship,
@@ -173,9 +164,8 @@ def scrape_mps(
             )
         )
 
-    return ScrapedMpsResult(
-        mps=scraped_mps,
-        mp_to_term_links=mp_to_term_links,
+    return ScrapedMpsInTermResult(
+        mps_in_term=scraped_mps_in_term,
     )
 
 
@@ -213,7 +203,7 @@ def scrape_votes(
                         sitting=sitting,
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
-                        mp_term_id=vote.mp_term_id,
+                        mp_in_term_id=vote.mp_term_id,
                     ),
                     voting_option_id=database_key_utils.generate_voting_option_natural_key(
                         term=term,
@@ -236,7 +226,7 @@ def scrape_votes(
                             sitting=sitting,
                             voting=voting,
                             voting_option_index=voting_option,
-                            mp_term_id=vote.mp_term_id,
+                            mp_in_term_id=vote.mp_term_id,
                         ),
                         voting_option_id=database_key_utils.generate_voting_option_natural_key(
                             term=term,

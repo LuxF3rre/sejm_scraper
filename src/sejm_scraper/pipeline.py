@@ -34,11 +34,11 @@ def pipeline(
 
         # Mps & Sittings
         for term in terms:
-            scraped_mps = scrape.scrape_mps(client=http_client, term=term)
-            for mp in scraped_mps.mps:
-                database_client.merge(mp)
-            for mp_to_term_link in scraped_mps.mp_to_term_links:
-                database_client.merge(mp_to_term_link)
+            scraped_mps_in_term = scrape.scrape_mps_in_term(
+                client=http_client, term=term
+            )
+            for mp_in_term in scraped_mps_in_term.mps_in_term:
+                database_client.merge(mp_in_term)
             database_client.commit()
 
             sittings = scrape.scrape_sittings(
