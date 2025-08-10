@@ -150,6 +150,7 @@ def scrape_mps_in_term(
             database.MpInTerm(
                 id=mp_in_term_id,
                 in_term_id=mp.in_term_id,
+                term_id=term.id,
                 first_name=mp.first_name,
                 second_name=mp.second_name,
                 last_name=mp.last_name,
