@@ -44,7 +44,7 @@ in
     ty = {
       enable = true;
       name = "ty static analysis";
-      entry = "${pkgs-unstable.ty}/bin/ty check";
+      entry = "bash -c '${pkgs-unstable.ty}/bin/ty check --python \${UV_PROJECT_ENVIRONMENT#$PWD/}'";
       language = "system";
     };
     name-tests-test.enable = true;
