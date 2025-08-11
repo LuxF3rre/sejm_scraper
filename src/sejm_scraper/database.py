@@ -1,12 +1,16 @@
+import os
 from datetime import date
 from typing import Union
 
+from loguru import logger
 from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper import api_schemas
 
+DEBUG = bool(os.getenv("SEJM_SCRAPER_DEBUG", None))
+
 DUCKDB_URL = "duckdb:///sejm_scraper.duckdb"
-ENGINE = create_engine(DUCKDB_URL, echo=True)
+ENGINE = create_engine(DUCKDB_URL, echo=DEBUG)
 
 
 class Term(SQLModel, table=True):
@@ -67,4 +71,6 @@ class MpInTerm(SQLModel, table=True):
 
 
 def create_db_and_tables() -> None:
+    logger.info("Creating database and tables")
     SQLModel.metadata.create_all(ENGINE)
+    logger.debug("Successfully created database and tables")

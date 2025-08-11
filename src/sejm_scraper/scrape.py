@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import httpx
+from loguru import logger
 
 from sejm_scraper import api_client, api_schemas, database, database_key_utils
 
@@ -12,10 +13,15 @@ def scrape_terms(
     client: httpx.Client,
     from_term: Optional[int] = None,
 ) -> list[database.Term]:
+    logger.info(
+        f"Scraping terms starting from term {from_term}"
+        if from_term
+        else "Scraping all terms"
+    )
     terms = api_client.fetch_terms(client=client)
     if from_term is not None:
         terms = [term for term in terms if term.number >= from_term]
-    return [
+    result = [
         database.Term(
             id=database_key_utils.generate_term_natural_key(term=term),
             number=term.number,
@@ -24,6 +30,8 @@ def scrape_terms(
         )
         for term in terms
     ]
+    logger.debug(f"Scraped {len(result)} terms")
+    return result
 
 
 def scrape_sittings(
@@ -31,6 +39,10 @@ def scrape_sittings(
     term: database.Term,
     from_sitting: Optional[int] = None,
 ) -> list[database.Sitting]:
+    logger.info(
+        f"Scraping sittings for term {term.number}"
+        + (f" starting from sitting {from_sitting}" if from_sitting else "")
+    )
     sittings = api_client.fetch_sittings(client=client, term=term.number)
     sittings = [
         sitting
@@ -41,7 +53,7 @@ def scrape_sittings(
         sittings = [
             sitting for sitting in sittings if sitting.number >= from_sitting
         ]
-    return [
+    result = [
         database.Sitting(
             id=database_key_utils.generate_sitting_natural_key(
                 sitting=sitting, term=term
@@ -52,6 +64,8 @@ def scrape_sittings(
         )
         for sitting in sittings
     ]
+    logger.debug(f"Scraped {len(result)} sittings for term {term.number}")
+    return result
 
 
 @dataclass
@@ -66,6 +80,10 @@ def scrape_votings(
     sitting: database.Sitting,
     from_voting: Optional[int] = None,
 ) -> ScrapedVotingsResult:
+    logger.info(
+        f"Scraping votings for term {term.number}, sitting {sitting.number}"
+        + (f" starting from voting {from_voting}" if from_voting else "")
+    )
     votings = api_client.fetch_votings(
         client=client, term=term.number, sitting=sitting.number
     )
@@ -121,6 +139,11 @@ def scrape_votings(
                 )
             )
 
+    logger.debug(
+        f"Scraped {len(scraped_votings)}"
+        f" votings and {len(scraped_voting_options)}"
+        f" voting options for term {term.number}, sitting {sitting.number}"
+    )
     return ScrapedVotingsResult(
         votings=scraped_votings,
         voting_options=scraped_voting_options,
@@ -136,6 +159,7 @@ def scrape_mps_in_term(
     client: httpx.Client,
     term: database.Term,
 ) -> ScrapedMpsInTermResult:
+    logger.info(f"Scraping MPs for term {term.number}")
     mps_in_term = api_client.fetch_mps_in_term(client=client, term=term.number)
 
     scraped_mps_in_term = []
@@ -165,6 +189,9 @@ def scrape_mps_in_term(
             )
         )
 
+    logger.debug(
+        f"Scraped {len(scraped_mps_in_term)} MPs for term {term.number}"
+    )
     return ScrapedMpsInTermResult(
         mps_in_term=scraped_mps_in_term,
     )
@@ -176,6 +203,10 @@ def scrape_votes(
     sitting: database.Sitting,
     voting: database.Voting,
 ) -> list[database.Vote]:
+    logger.info(
+        f"Scraping votes for term {term.number}, sitting {sitting.number},"
+        f" voting {voting.number}"
+    )
     voting_with_votes = api_client.fetch_votes(
         client=client,
         term=term.number,
@@ -241,4 +272,8 @@ def scrape_votes(
                     )
                 )
 
+    logger.debug(
+        f"Scraped {len(scraped_votes)} votes for term {term.number},"
+        f" sitting {sitting.number}, voting {voting.number}"
+    )
     return scraped_votes
