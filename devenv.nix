@@ -43,7 +43,7 @@ in
     ty = {
       enable = true;
       name = "ty static analysis";
-      entry = "ty check";
+      entry = "${pkgs-unstable.ty}/bin/ty check";
       language = "system";
     };
     name-tests-test.enable = true;
@@ -85,16 +85,16 @@ in
     gitleaks = {
       enable = true;
       name = "Detect hardcoded secrets";
-      entry = "gitleaks git --pre-commit --redact --staged --verbose";
+      entry = "${pkgs-unstable.gitleaks}/bin/gitleaks git --pre-commit --redact --staged --verbose";
       language = "system";
       pass_filenames = false;
     };
   };
 
   enterShell = ''
-    uv venv
+    ${pkgs-unstable.uv}/bin/uv venv
     source .devenv/state/venv/bin/activate
-    uv sync
-    uv pip install -e .
+    ${pkgs-unstable.uv}/bin/uv sync
+    ${pkgs-unstable.uv}/bin/uv pip install -e .
   '';
 }
