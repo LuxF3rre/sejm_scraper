@@ -174,3 +174,4 @@ devenv.local.nix
 
 # Data
 *.duckdb
+*.duckdb.wal
