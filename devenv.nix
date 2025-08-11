@@ -17,6 +17,7 @@ in
     pkgs-unstable.python312Packages.ipython
     pkgs-unstable.python312Packages.ipdb
     pkgs-unstable.python312Packages.scalene
+    pkgs-unstable.python312Packages.pytest
     pkgs-unstable.ruff
     pkgs-unstable.ty
     pkgs-unstable.commitizen
@@ -77,7 +78,13 @@ in
     end-of-file-fixer.enable = true;
     trim-trailing-whitespace.enable = true;
     fix-byte-order-marker.enable = true;
-    mixed-line-endings.enable = true;
+    mixed-line-endings = {
+      enable = true;
+      args = [
+        "--fix"
+        "lf"
+      ];
+    };
     commitizen = {
       enable = true;
       stages = [ "commit-msg" ];
@@ -93,8 +100,12 @@ in
 
   enterShell = ''
     ${pkgs-unstable.uv}/bin/uv venv
-    source .devenv/state/venv/bin/activate
+    source $UV_PROJECT_ENVIRONMENT/bin/activate
     ${pkgs-unstable.uv}/bin/uv sync
-    ${pkgs-unstable.uv}/bin/uv pip install -e .
+    ${pkgs-unstable.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
   '';
+
+  # enterTest = ''
+  #   ${pkgs-unstable.python312Packages.pytest}/bin/pytest .
+  # '';
 }
