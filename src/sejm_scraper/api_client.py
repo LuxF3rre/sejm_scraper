@@ -25,7 +25,7 @@ def fetch_votes(
     sitting: int,
     voting: int,
 ) -> api_schemas.VotingWithMpVotesSchema:
-    logger.info(
+    logger.debug(
         f"Fetching votes for term {term}, sitting {sitting}, voting {voting}"
     )
     response = client.get(
@@ -58,7 +58,7 @@ def _fetch_list[T: BaseModel](
 def fetch_terms(
     client: httpx.Client,
 ) -> list[api_schemas.TermSchema]:
-    logger.info("Fetching terms")
+    logger.debug("Fetching terms")
     return _fetch_list(
         client=client,
         path="term",
@@ -70,7 +70,7 @@ def fetch_sittings(
     client: httpx.Client,
     term: int,
 ) -> list[api_schemas.SittingSchema]:
-    logger.info(f"Fetching sittings for term {term}")
+    logger.debug(f"Fetching sittings for term {term}")
     return _fetch_list(
         client=client,
         path=f"term{term}/proceedings",
@@ -83,7 +83,7 @@ def fetch_votings(
     term: int,
     sitting: int,
 ) -> list[api_schemas.VotingSchema]:
-    logger.info(f"Fetching votings for term {term}, sitting {sitting}")
+    logger.debug(f"Fetching votings for term {term}, sitting {sitting}")
     return _fetch_list(
         client=client,
         path=f"term{term}/votings/{sitting}",
@@ -96,7 +96,7 @@ def fetch_mps_in_term(
     client: httpx.Client,
     term: int,
 ) -> list[api_schemas.MpInTermSchema]:
-    logger.info(f"Fetching MPs for term {term}")
+    logger.debug(f"Fetching MPs for term {term}")
     return _fetch_list(
         client=client,
         path=f"term{term}/MP",
