@@ -82,37 +82,34 @@ def start_pipeline(
 
 def resume_pipeline() -> None:
     with sqlmodel.Session(database.ENGINE) as database_client:
-        last_term = database_client.exec(
-            sqlmodel.select(database.Term).order_by(
-                sqlmodel.desc(database.Term.number)  # ty: ignore
+        most_recent_voting = database_client.exec(
+            sqlmodel.select(database.Voting)
+            .join(database.Sitting)
+            .join(database.Term)
+            .order_by(
+                sqlmodel.desc(database.Term.number),
+                sqlmodel.desc(database.Sitting.number),
+                sqlmodel.desc(database.Voting.number),
             )
         ).first()
-        if last_term is None:
+
+        if most_recent_voting is None:
             start_pipeline()
         else:
-            last_sitting = database_client.exec(
-                sqlmodel.select(database.Sitting)
-                .where(database.Sitting.term_id == last_term.id)
-                .order_by(sqlmodel.desc(database.Sitting.number))  # ty: ignore
+            sitting = database_client.exec(
+                sqlmodel.select(database.Sitting).where(
+                    database.Sitting.id == most_recent_voting.sitting_id
+                )
             ).first()
-            if last_sitting is None:
-                start_pipeline(from_term=last_term.number)
-            else:
-                last_voting = database_client.exec(
-                    sqlmodel.select(database.Voting)
-                    .where(database.Voting.sitting_id == last_sitting.id)
-                    .order_by(
-                        sqlmodel.desc(database.Voting.number)  # ty: ignore
-                    )
-                ).first()
-                if last_voting is None:
-                    start_pipeline(
-                        from_term=last_term.number,
-                        from_sitting=last_sitting.number,
-                    )
-                else:
-                    start_pipeline(
-                        from_term=last_term.number,
-                        from_sitting=last_sitting.number,
-                        from_voting=last_voting.number,
-                    )
+
+            term = database_client.exec(
+                sqlmodel.select(database.Term).where(
+                    database.Term.id == sitting.term_id
+                )
+            ).first()
+
+            start_pipeline(
+                from_term=term.number,
+                from_sitting=sitting.number,
+                from_voting=most_recent_voting.number,
+            )
