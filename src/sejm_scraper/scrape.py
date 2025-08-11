@@ -219,6 +219,11 @@ def scrape_votes(
     scraped_votes = []
 
     for vote in votes:
+        mp_in_term_id = database_key_utils.generate_mp_in_term_natural_key(
+            term=term,
+            mp=api_schemas.MpInTermId(vote.mp_term_id),
+        )
+
         if vote.multiple_option_votes is None:
             if vote.vote == api_schemas.VOTE_VALID:
                 msg = (
@@ -235,7 +240,7 @@ def scrape_votes(
                         sitting=sitting,
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
-                        mp_in_term_id=vote.mp_term_id,
+                        mp_in_term_id=mp_in_term_id,
                     ),
                     voting_option_id=database_key_utils.generate_voting_option_natural_key(
                         term=term,
@@ -243,7 +248,7 @@ def scrape_votes(
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
                     ),
-                    mp_in_term_id=vote.mp_term_id,
+                    mp_in_term_id=mp_in_term_id,
                     vote=vote.vote,
                     party=vote.party,
                 )
@@ -258,7 +263,7 @@ def scrape_votes(
                             sitting=sitting,
                             voting=voting,
                             voting_option_index=voting_option,
-                            mp_in_term_id=vote.mp_term_id,
+                            mp_in_term_id=mp_in_term_id,
                         ),
                         voting_option_id=database_key_utils.generate_voting_option_natural_key(
                             term=term,
@@ -266,7 +271,7 @@ def scrape_votes(
                             voting=voting,
                             voting_option_index=voting_option,
                         ),
-                        mp_in_term_id=vote.mp_term_id,
+                        mp_in_term_id=mp_in_term_id,
                         vote=inner_vote,
                         party=vote.party,
                     )

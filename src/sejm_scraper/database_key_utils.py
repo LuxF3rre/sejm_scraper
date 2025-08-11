@@ -78,8 +78,13 @@ def generate_vote_natural_key(
 
 def generate_mp_in_term_natural_key(
     term: api_schemas.TermSchema | database.Term,
-    mp: api_schemas.MpInTermSchema | database.MpInTerm,
+    mp: api_schemas.MpInTermSchema | database.MpInTerm | api_schemas.MpInTermId,
 ) -> str:
+    if isinstance(mp, int):  # api_schemas.MpInTermId)
+        return _generate_hash(
+            term.number,
+            mp,
+        )
     return _generate_hash(
         term.number,
         mp.in_term_id,

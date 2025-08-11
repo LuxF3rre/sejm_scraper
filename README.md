@@ -78,7 +78,7 @@ erDiagram
     Vote {
         string id PK
         string voting_option_id FK
-        int mp_in_term_id FK
+        string mp_in_term_id FK
         string vote
         string party "nullable"
     }
@@ -86,7 +86,7 @@ erDiagram
     MpInTerm {
         string id PK
         string term_id FK
-        int in_term_id UK
+        int in_term_id
         string first_name
         string second_name "nullable"
         string last_name

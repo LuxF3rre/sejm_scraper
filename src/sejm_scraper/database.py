@@ -48,7 +48,7 @@ class VotingOption(SQLModel, table=True):
 class Vote(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
-    mp_in_term_id: int = Field(foreign_key="mpinterm.in_term_id")
+    mp_in_term_id: str = Field(foreign_key="mpinterm.id")
     vote: api_schemas.Vote
     party: Union[str, None]
 
@@ -56,7 +56,7 @@ class Vote(SQLModel, table=True):
 class MpInTerm(SQLModel, table=True):
     id: str = Field(primary_key=True)
     term_id: str = Field(foreign_key="term.id")
-    in_term_id: int = Field(unique=True)
+    in_term_id: int
     first_name: str
     second_name: Union[str, None]
     last_name: str
