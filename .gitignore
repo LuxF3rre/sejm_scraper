@@ -172,6 +172,9 @@ devenv.local.nix
 # pre-commit
 .pre-commit-config.yaml
 
+# Claude Code directory
+.claude
+
 # Data
 *.duckdb
 *.duckdb.wal
