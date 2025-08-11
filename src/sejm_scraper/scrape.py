@@ -109,7 +109,7 @@ def scrape_votings(
             )
         )
         if voting.voting_options is not None:
-            for voting_option in voting.voting_options:  # ty: ignore
+            for voting_option in voting.voting_options:
                 scraped_voting_options.append(
                     database.VotingOption(
                         id=database_key_utils.generate_voting_option_natural_key(
