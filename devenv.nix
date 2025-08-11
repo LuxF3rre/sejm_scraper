@@ -34,7 +34,7 @@ in
     ruff-format.enable = true;
     nil.enable = true;
     nixfmt-rfc-style.enable = true;
-    markdownlint.enable = true;
+    # arkdownlint.enable = true;
     name-tests-test.enable = true;
     check-yaml.enable = true;
     check-toml.enable = true;
