@@ -219,6 +219,10 @@ def scrape_votes(
     scraped_votes = []
 
     for vote in votes:
+        logger.debug(
+            f"Processing vote for MP {vote.mp_term_id} in term {term.number},"
+            f" sitting {sitting.number}, voting {voting.number}"
+        )
         mp_in_term_id = database_key_utils.generate_mp_in_term_natural_key(
             term=term,
             mp=api_schemas.MpInTermId(vote.mp_term_id),
