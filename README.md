@@ -89,8 +89,8 @@ erDiagram
         string id PK
         string voting_option_id FK
         string mp_in_term_id FK
-        string vote
         string party_id FK "nullable"
+        string vote
     }
 
     MpInTerm {
