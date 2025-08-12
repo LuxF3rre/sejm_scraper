@@ -50,7 +50,7 @@ class Vote(SQLModel, table=True):
     voting_option_id: str = Field(foreign_key="votingoption.id")
     mp_in_term_id: str = Field(foreign_key="mpinterm.id")
     vote: api_schemas.Vote
-    party: Union[str, None]
+    party_id: Union[str, None] = Field(foreign_key="party.id")
 
 
 class MpInTerm(SQLModel, table=True):

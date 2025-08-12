@@ -228,6 +228,14 @@ def scrape_votes(
             mp=api_schemas.MpInTermId(vote.mp_term_id),
         )
 
+        party_id = (
+            database_key_utils.generate_party_natural_key(
+                term=term, party=vote.party
+            )
+            if vote.party is not None
+            else None
+        )
+
         if vote.multiple_option_votes is None:
             if vote.vote == api_schemas.VOTE_VALID:
                 msg = (
@@ -254,7 +262,7 @@ def scrape_votes(
                     ),
                     mp_in_term_id=mp_in_term_id,
                     vote=vote.vote,
-                    party=vote.party,
+                    party_id=party_id,
                 )
             )
         else:
@@ -277,7 +285,7 @@ def scrape_votes(
                         ),
                         mp_in_term_id=mp_in_term_id,
                         vote=inner_vote,
-                        party=vote.party,
+                        party_id=party_id,
                     )
                 )
 
