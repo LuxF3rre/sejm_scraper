@@ -1,6 +1,6 @@
 [project]
 name = "sejm_scraper"
-version = "2.0.0"
+version = "3.0.0"
 description = ""
 readme = "README.md"
 license = "MIT"
@@ -135,4 +135,4 @@ name = "cz_conventional_commits"
 tag_format = "v$version"
 version_scheme = "semver2"
 version_provider = "uv"
-update_changelog_on_bump = true
+update_changelog_on_bump = false

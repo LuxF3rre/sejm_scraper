@@ -75,12 +75,22 @@ erDiagram
         string description "nullable"
     }
 
+    Party {
+        string id PK
+        string abbreviation
+        string name
+        string phone "nullable"
+        string fax "nullable"
+        string email "nullable"
+        int member_count
+    }
+
     Vote {
         string id PK
         string voting_option_id FK
         string mp_in_term_id FK
         string vote
-        string party "nullable"
+        string party_id FK "nullable"
     }
 
     MpInTerm {
@@ -107,6 +117,7 @@ erDiagram
     Voting ||--o{ VotingOption : "has"
     VotingOption ||--o{ Vote : "receives"
     MpInTerm ||--o{ Vote : "casts"
+    Party ||--o{ Vote : "in"
 ```
 
 ## Installation & usage

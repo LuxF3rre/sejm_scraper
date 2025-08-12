@@ -50,7 +50,7 @@ class Vote(SQLModel, table=True):
     voting_option_id: str = Field(foreign_key="votingoption.id")
     mp_in_term_id: str = Field(foreign_key="mpinterm.id")
     vote: api_schemas.Vote
-    party: Union[str, None]
+    party_id: Union[str, None] = Field(foreign_key="party.id")
 
 
 class MpInTerm(SQLModel, table=True):
@@ -68,6 +68,16 @@ class MpInTerm(SQLModel, table=True):
     district_name: str
     inactivity_cause: Union[str, None]
     inactivity_description: Union[str, None]
+
+
+class Party(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    abbreviation: str
+    name: str
+    phone: Union[str, None]
+    fax: Union[str, None]
+    email: Union[str, None]
+    member_count: int
 
 
 def create_db_and_tables() -> None:

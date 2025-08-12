@@ -228,6 +228,14 @@ def scrape_votes(
             mp=api_schemas.MpInTermId(vote.mp_term_id),
         )
 
+        party_id = (
+            database_key_utils.generate_party_natural_key(
+                term=term, party=vote.party
+            )
+            if vote.party is not None
+            else None
+        )
+
         if vote.multiple_option_votes is None:
             if vote.vote == api_schemas.VOTE_VALID:
                 msg = (
@@ -254,7 +262,7 @@ def scrape_votes(
                     ),
                     mp_in_term_id=mp_in_term_id,
                     vote=vote.vote,
-                    party=vote.party,
+                    party_id=party_id,
                 )
             )
         else:
@@ -277,7 +285,7 @@ def scrape_votes(
                         ),
                         mp_in_term_id=mp_in_term_id,
                         vote=inner_vote,
-                        party=vote.party,
+                        party_id=party_id,
                     )
                 )
 
@@ -286,3 +294,33 @@ def scrape_votes(
         f" sitting {sitting.number}, voting {voting.number}"
     )
     return scraped_votes
+
+
+def scrape_parties(
+    client: httpx.Client,
+    term: database.Term,
+) -> list[database.Party]:
+    logger.info(f"Scraping parties for term {term.number}")
+    parties = api_client.fetch_parties(client=client, term=term.number)
+
+    scraped_parties = []
+
+    for party in parties:
+        scraped_parties.append(
+            database.Party(
+                id=database_key_utils.generate_party_natural_key(
+                    term=term, party=party
+                ),
+                abbreviation=party.id,
+                name=party.name,
+                phone=party.phone,
+                fax=party.fax,
+                email=party.email,
+                member_count=party.member_count,
+            )
+        )
+
+    logger.debug(
+        f"Scraped {len(scraped_parties)} parties for term {term.number}"
+    )
+    return scraped_parties

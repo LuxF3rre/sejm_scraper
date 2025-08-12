@@ -55,7 +55,7 @@ in
     uv-export = {
       enable = true;
       package = pkgs-unstable.uv;
-      entry = "${pkgs-unstable.uv}/bin/uv export --format requirements.txt -o requirements.txt --locked --quiet";
+      entry = "${pkgs-unstable.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
     };
     uv-sync = {
       enable = true;
@@ -103,6 +103,7 @@ in
     source $UV_PROJECT_ENVIRONMENT/bin/activate
     ${pkgs-unstable.uv}/bin/uv sync
     ${pkgs-unstable.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
+    export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   '';
 
   # enterTest = ''
