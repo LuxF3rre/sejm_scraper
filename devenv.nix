@@ -55,7 +55,7 @@ in
     uv-export = {
       enable = true;
       package = pkgs-unstable.uv;
-      entry = "${pkgs-unstable.uv}/bin/uv export --format requirements.txt -o requirements.txt --locked --quiet";
+      entry = "${pkgs-unstable.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
     };
     uv-sync = {
       enable = true;
