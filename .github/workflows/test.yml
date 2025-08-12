@@ -1,0 +1,42 @@
+name: "Test"
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-python-
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv sync --all-extras
+          uv tool install ruff
+          uv tool install ty
+          uv tool install pytest
+
+      - name: Lint with ruff
+        run: uvx ruff check ./src/
+
+      - name: Test with ty
+        run: uvx ty check ./src/ --python ./.venv/
+
+      # - name: Test with pytest
+      #   run: uvx pytest

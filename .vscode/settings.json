@@ -1,3 +1,8 @@
 {
-    "mypy.runUsingActiveInterpreter": true
+  "editor.formatOnSave": true,
+  "python.defaultInterpreterPath": "${workspaceFolder}/.devenv/state/venv/bin/python",
+  "ty.importStrategy": "fromEnvironment",
+  "ty.interpreter": [
+    "${workspaceFolder}/.devenv/state/venv/bin/python"
+  ]
 }
