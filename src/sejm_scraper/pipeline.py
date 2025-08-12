@@ -32,8 +32,17 @@ def start_pipeline(
             database_client.merge(term)
         database_client.commit()
 
-        # Mps & Sittings
+        # Parties, Mps, Sittings
         for term in terms:
+            # Parties
+            scraped_parties = scrape.scrape_parties(
+                client=http_client, term=term
+            )
+            for party in scraped_parties:
+                database_client.merge(party)
+            database_client.commit()
+
+            # MPs
             scraped_mps_in_term = scrape.scrape_mps_in_term(
                 client=http_client, term=term
             )
@@ -41,6 +50,7 @@ def start_pipeline(
                 database_client.merge(mp_in_term)
             database_client.commit()
 
+            # Sittings
             sittings = scrape.scrape_sittings(
                 client=http_client,
                 term=term,

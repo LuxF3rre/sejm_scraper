@@ -70,6 +70,16 @@ class MpInTerm(SQLModel, table=True):
     inactivity_description: Union[str, None]
 
 
+class Party(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    abbreviation: str
+    name: str
+    phone: Union[str, None]
+    fax: Union[str, None]
+    email: Union[str, None]
+    member_count: int
+
+
 def create_db_and_tables() -> None:
     logger.info("Creating database and tables")
     SQLModel.metadata.create_all(ENGINE)

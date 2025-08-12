@@ -286,3 +286,33 @@ def scrape_votes(
         f" sitting {sitting.number}, voting {voting.number}"
     )
     return scraped_votes
+
+
+def scrape_parties(
+    client: httpx.Client,
+    term: database.Term,
+) -> list[database.Party]:
+    logger.info(f"Scraping parties for term {term.number}")
+    parties = api_client.fetch_parties(client=client, term=term.number)
+
+    scraped_parties = []
+
+    for party in parties:
+        scraped_parties.append(
+            database.Party(
+                id=database_key_utils.generate_party_natural_key(
+                    term=term, party=party
+                ),
+                abbreviation=party.id,
+                name=party.name,
+                phone=party.phone,
+                fax=party.fax,
+                email=party.email,
+                member_count=party.member_count,
+            )
+        )
+
+    logger.debug(
+        f"Scraped {len(scraped_parties)} parties for term {term.number}"
+    )
+    return scraped_parties

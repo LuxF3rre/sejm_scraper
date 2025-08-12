@@ -90,3 +90,15 @@ class MpInTermSchema(BaseModel):
     inactivity_description: Union[str, None] = Field(
         default=None, validation_alias="waiverDesc"
     )
+
+
+PartyAbbreviation = NewType("PartyAbbreviation", str)
+
+
+class PartySchema(BaseModel):
+    id: PartyAbbreviation
+    name: str
+    phone: Union[str, None] = Field(default=None)
+    fax: Union[str, None] = Field(default=None)
+    email: Union[str, None] = Field(default=None)
+    member_count: int = Field(validation_alias="membersCount")

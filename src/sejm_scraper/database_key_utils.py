@@ -89,3 +89,25 @@ def generate_mp_in_term_natural_key(
         term.number,
         mp.in_term_id,
     )
+
+
+def generate_party_natural_key(
+    term: api_schemas.TermSchema | database.Term,
+    party: api_schemas.PartySchema
+    | database.Party
+    | api_schemas.PartyAbbreviation,
+) -> str:
+    if isinstance(party, api_schemas.PartySchema):
+        return _generate_hash(
+            term.number,
+            party.id,
+        )
+    elif isinstance(party, database.Party):
+        return _generate_hash(
+            term.number,
+            party.abbreviation,
+        )
+    return _generate_hash(  # api_schemas.PartyAbbreviation
+        term.number,
+        party,
+    )
