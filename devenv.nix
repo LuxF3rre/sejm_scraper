@@ -103,6 +103,7 @@ in
     source $UV_PROJECT_ENVIRONMENT/bin/activate
     ${pkgs-unstable.uv}/bin/uv sync
     ${pkgs-unstable.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
+    export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   '';
 
   # enterTest = ''
