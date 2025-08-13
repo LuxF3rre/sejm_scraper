@@ -299,7 +299,7 @@ def scrape_votes(
 def scrape_parties(
     client: httpx.Client,
     term: database.Term,
-) -> list[database.Party]:
+) -> list[database.PartyInTerm]:
     logger.info(f"Scraping parties for term {term.number}")
     parties = api_client.fetch_parties(client=client, term=term.number)
 
@@ -307,10 +307,11 @@ def scrape_parties(
 
     for party in parties:
         scraped_parties.append(
-            database.Party(
+            database.PartyInTerm(
                 id=database_key_utils.generate_party_natural_key(
                     term=term, party=party
                 ),
+                term_id=term.id,
                 abbreviation=party.id,
                 name=party.name,
                 phone=party.phone,

@@ -70,8 +70,9 @@ class MpInTerm(SQLModel, table=True):
     inactivity_description: Union[str, None]
 
 
-class Party(SQLModel, table=True):
+class PartyInTerm(SQLModel, table=True):
     id: str = Field(primary_key=True)
+    term_id: str = Field(foreign_key="term.id")
     abbreviation: str
     name: str
     phone: Union[str, None]
