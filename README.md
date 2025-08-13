@@ -75,8 +75,9 @@ erDiagram
         string description "nullable"
     }
 
-    Party {
+    PartyInTerm {
         string id PK
+        string term_id FK
         string abbreviation
         string name
         string phone "nullable"
@@ -113,11 +114,12 @@ erDiagram
     %% Relationships
     Term ||--o{ Sitting : "contains"
     Term ||--o{ MpInTerm : "has"
+    Term ||--o{ PartyInTerm : "has"
     Sitting ||--o{ Voting : "contains"
     Voting ||--o{ VotingOption : "has"
     VotingOption ||--o{ Vote : "receives"
     MpInTerm ||--o{ Vote : "casts"
-    Party ||--o{ Vote : "in"
+    PartyInTerm ||--o{ Vote : "in"
 ```
 
 ## Installation & usage
