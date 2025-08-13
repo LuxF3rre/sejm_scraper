@@ -1,6 +1,6 @@
 [project]
 name = "sejm_scraper"
-version = "3.0.0"
+version = "4.0.0"
 description = ""
 readme = "README.md"
 license = "MIT"
