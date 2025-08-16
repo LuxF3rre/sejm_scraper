@@ -3,11 +3,16 @@ from typing import Any
 
 from sejm_scraper import api_schemas, database
 
+NULL_OR_EMPTY_HASH_ELEMENT = "Hash elements cannot be null or empty"
+
 
 def _generate_hash(
     *s: Any,
 ) -> str:
-    to_hash = [str(x) for x in s if x is not None]
+    for x in s:
+        if x is None or x == "":
+            raise ValueError(NULL_OR_EMPTY_HASH_ELEMENT)
+    to_hash = [str(x) for x in s]
     to_hash_bytes = "".join(to_hash).encode("utf-8")
     sha256_hash = sha256()
     sha256_hash.update(to_hash_bytes)
