@@ -99,7 +99,6 @@
   # export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   enterShell = ''
     source $UV_PROJECT_ENVIRONMENT/bin/activate
-    ${pkgs.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
   '';
 
   # enterTest = ''
