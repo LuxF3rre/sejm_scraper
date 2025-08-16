@@ -24,6 +24,7 @@
     pkgs.commitizen
     pkgs.gitleaks
     pkgs.cruft
+    pkgs.duckdb
   ];
 
   languages.python = {
