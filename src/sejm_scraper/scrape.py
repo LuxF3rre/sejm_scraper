@@ -228,11 +228,11 @@ def scrape_votes(
             mp=api_schemas.MpInTermId(vote.mp_term_id),
         )
 
-        party_id = (
-            database_key_utils.generate_party_natural_key(
-                term=term, party=vote.party
+        party_in_term_id = (
+            database_key_utils.generate_party_in_term_natural_key(
+                term=term, party_in_term=vote.party_in_term
             )
-            if vote.party is not None
+            if vote.party_in_term is not None
             else None
         )
 
@@ -262,7 +262,7 @@ def scrape_votes(
                     ),
                     mp_in_term_id=mp_in_term_id,
                     vote=vote.vote,
-                    party_id=party_id,
+                    party_in_term_id=party_in_term_id,
                 )
             )
         else:
@@ -285,7 +285,7 @@ def scrape_votes(
                         ),
                         mp_in_term_id=mp_in_term_id,
                         vote=inner_vote,
-                        party_id=party_id,
+                        party_in_term_id=party_in_term_id,
                     )
                 )
 
@@ -296,32 +296,34 @@ def scrape_votes(
     return scraped_votes
 
 
-def scrape_parties(
+def scrape_parties_in_term(
     client: httpx.Client,
     term: database.Term,
 ) -> list[database.PartyInTerm]:
     logger.info(f"Scraping parties for term {term.number}")
-    parties = api_client.fetch_parties(client=client, term=term.number)
+    parties_in_term = api_client.fetch_parties_in_term(
+        client=client, term=term.number
+    )
 
-    scraped_parties = []
+    scraped_parties_in_term = []
 
-    for party in parties:
-        scraped_parties.append(
+    for party_in_term in parties_in_term:
+        scraped_parties_in_term.append(
             database.PartyInTerm(
-                id=database_key_utils.generate_party_natural_key(
-                    term=term, party=party
+                id=database_key_utils.generate_party_in_term_natural_key(
+                    term=term, party_in_term=party_in_term
                 ),
                 term_id=term.id,
-                abbreviation=party.id,
-                name=party.name,
-                phone=party.phone,
-                fax=party.fax,
-                email=party.email,
-                member_count=party.member_count,
+                abbreviation=party_in_term.id,
+                name=party_in_term.name,
+                phone=party_in_term.phone,
+                fax=party_in_term.fax,
+                email=party_in_term.email,
+                member_count=party_in_term.member_count,
             )
         )
 
     logger.debug(
-        f"Scraped {len(scraped_parties)} parties for term {term.number}"
+        f"Scraped {len(scraped_parties_in_term)} parties for term {term.number}"
     )
-    return scraped_parties
+    return scraped_parties_in_term

@@ -35,11 +35,11 @@ def start_pipeline(
         # Parties, Mps, Sittings
         for term in terms:
             # Parties
-            scraped_parties = scrape.scrape_parties(
+            scraped_parties_in_term = scrape.scrape_parties_in_term(
                 client=http_client, term=term
             )
-            for party in scraped_parties:
-                database_client.merge(party)
+            for party_in_term in scraped_parties_in_term:
+                database_client.merge(party_in_term)
             database_client.commit()
 
             # MPs

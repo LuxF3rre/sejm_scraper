@@ -90,7 +90,7 @@ erDiagram
         string id PK
         string voting_option_id FK
         string mp_in_term_id FK
-        string party_id FK "nullable"
+        string party_in_term_id FK "nullable"
         string vote
     }
 
