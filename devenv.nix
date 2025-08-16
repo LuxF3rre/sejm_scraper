@@ -48,19 +48,8 @@
       entry = "bash -c '${pkgs.ty}/bin/ty check --python \${UV_PROJECT_ENVIRONMENT#$PWD/}'";
       language = "system";
     };
-    name-tests-test.enable = true;
-    uv-lock = {
-      enable = true;
-      package = pkgs.uv;
-    };
-    uv-export = {
-      enable = true;
-      package = pkgs.uv;
-      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
-    };
     uv-sync = {
       enable = true;
-      package = pkgs.uv;
       entry = "${pkgs.uv}/bin/uv sync";
       stages = [
         "pre-commit"
@@ -70,6 +59,12 @@
       ];
       pass_filenames = false;
     };
+    uv-export = {
+      enable = true;
+      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
+      after = [ "uv-sync" ];
+    };
+    name-tests-test.enable = true;
     nil.enable = true;
     nixfmt-rfc-style.enable = true;
     markdownlint.enable = true;
