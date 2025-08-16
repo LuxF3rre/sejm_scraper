@@ -111,7 +111,6 @@ erDiagram
         string inactivity_description "nullable"
     }
 
-    %% Relationships
     Term ||--o{ Sitting : "contains"
     Term ||--o{ MpInTerm : "has"
     Term ||--o{ PartyInTerm : "has"
