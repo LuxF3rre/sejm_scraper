@@ -9,7 +9,7 @@ from sejm_scraper import api_schemas
 
 DEBUG = True if os.getenv("SEJM_SCRAPER_DEBUG", None) == "true" else False
 
-DUCKDB_URL = "duckdb:///sejm_scraper.duckdb"
+DUCKDB_URL = "duckdb:///" + os.getenv("DUCKDB_PATH", "sejm_scraper.duckdb")
 ENGINE = create_engine(DUCKDB_URL, echo=DEBUG)
 
 
