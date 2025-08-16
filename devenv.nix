@@ -11,7 +11,6 @@ in
   claude.code.enable = true;
 
   env = {
-    UV_VENV_CLEAR = 1;
     SEJM_SCRAPER_DEBUG = "true";
     DUCKDB_PATH = "sejm_scraper.duckdb";
   };
@@ -103,9 +102,7 @@ in
   };
 
   enterShell = ''
-    ${pkgs-unstable.uv}/bin/uv venv
     source $UV_PROJECT_ENVIRONMENT/bin/activate
-    ${pkgs-unstable.uv}/bin/uv sync
     ${pkgs-unstable.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
     export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   '';
