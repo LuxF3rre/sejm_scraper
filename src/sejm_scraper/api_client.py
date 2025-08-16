@@ -105,13 +105,13 @@ def fetch_mps_in_term(
 
 
 @retry(**RETRY_SETTINGS)
-def fetch_parties(
+def fetch_parties_in_term(
     client: httpx.Client,
     term: int,
-) -> list[api_schemas.PartySchema]:
+) -> list[api_schemas.PartyInSchema]:
     logger.debug(f"Fetching parties for term {term}")
     return _fetch_list(
         client=client,
         path=f"term{term}/clubs",
-        model=api_schemas.PartySchema,
+        model=api_schemas.PartyInSchema,
     )

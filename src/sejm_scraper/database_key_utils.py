@@ -91,23 +91,23 @@ def generate_mp_in_term_natural_key(
     )
 
 
-def generate_party_natural_key(
+def generate_party_in_term_natural_key(
     term: api_schemas.TermSchema | database.Term,
-    party: api_schemas.PartySchema
+    party_in_term: api_schemas.PartyInSchema
     | database.PartyInTerm
     | api_schemas.PartyAbbreviation,
 ) -> str:
-    if isinstance(party, api_schemas.PartySchema):
+    if isinstance(party_in_term, api_schemas.PartyInSchema):
         return _generate_hash(
             term.number,
-            party.id,
+            party_in_term.id,
         )
-    elif isinstance(party, database.PartyInTerm):
+    elif isinstance(party_in_term, database.PartyInTerm):
         return _generate_hash(
             term.number,
-            party.abbreviation,
+            party_in_term.abbreviation,
         )
     return _generate_hash(  # api_schemas.PartyAbbreviation
         term.number,
-        party,
+        party_in_term,
     )

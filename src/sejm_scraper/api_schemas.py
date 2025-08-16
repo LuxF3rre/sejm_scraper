@@ -54,7 +54,9 @@ MpInTermId = NewType("MpInTermId", int)
 
 class MpVoteSchema(BaseModel):
     mp_term_id: MpInTermId = Field(validation_alias="MP")
-    party: Union[str, None] = Field(default=None, validation_alias="club")
+    party_in_term: Union[str, None] = Field(
+        default=None, validation_alias="club"
+    )
     multiple_option_votes: Union[dict[OptionIndex, Vote], None] = Field(
         default=None, validation_alias="listVotes"
     )
@@ -95,7 +97,7 @@ class MpInTermSchema(BaseModel):
 PartyAbbreviation = NewType("PartyAbbreviation", str)
 
 
-class PartySchema(BaseModel):
+class PartyInSchema(BaseModel):
     id: PartyAbbreviation
     name: str
     phone: Union[str, None] = Field(default=None)
