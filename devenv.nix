@@ -3,9 +3,7 @@
   inputs,
   ...
 }:
-let
-  pkgs-unstable = import inputs.nixpkgs-unstable { system = pkgs.stdenv.system; };
-in
+
 {
   dotenv.enable = true;
   claude.code.enable = true;
@@ -16,16 +14,16 @@ in
   };
 
   packages = [
-    pkgs-unstable.python312Packages.python-lsp-server
-    pkgs-unstable.python312Packages.ipython
-    pkgs-unstable.python312Packages.ipdb
-    pkgs-unstable.python312Packages.scalene
-    pkgs-unstable.python312Packages.pytest
-    pkgs-unstable.ruff
-    pkgs-unstable.ty
-    pkgs-unstable.commitizen
-    pkgs-unstable.gitleaks
-    pkgs-unstable.cruft
+    pkgs.python312Packages.python-lsp-server
+    pkgs.python312Packages.ipython
+    pkgs.python312Packages.ipdb
+    pkgs.python312Packages.scalene
+    pkgs.python312Packages.pytest
+    pkgs.ruff
+    pkgs.ty
+    pkgs.commitizen
+    pkgs.gitleaks
+    pkgs.cruft
   ];
 
   languages.python = {
@@ -33,7 +31,7 @@ in
     version = "3.12";
     uv = {
       enable = true;
-      package = pkgs-unstable.uv;
+      package = pkgs.uv;
       sync = {
         enable = true;
         allExtras = true;
@@ -47,23 +45,23 @@ in
     ty = {
       enable = true;
       name = "ty static analysis";
-      entry = "bash -c '${pkgs-unstable.ty}/bin/ty check --python \${UV_PROJECT_ENVIRONMENT#$PWD/}'";
+      entry = "bash -c '${pkgs.ty}/bin/ty check --python \${UV_PROJECT_ENVIRONMENT#$PWD/}'";
       language = "system";
     };
     name-tests-test.enable = true;
     uv-lock = {
       enable = true;
-      package = pkgs-unstable.uv;
+      package = pkgs.uv;
     };
     uv-export = {
       enable = true;
-      package = pkgs-unstable.uv;
-      entry = "${pkgs-unstable.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
+      package = pkgs.uv;
+      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
     };
     uv-sync = {
       enable = true;
-      package = pkgs-unstable.uv;
-      entry = "${pkgs-unstable.uv}/bin/uv sync";
+      package = pkgs.uv;
+      entry = "${pkgs.uv}/bin/uv sync";
       stages = [
         "pre-commit"
         "post-checkout"
@@ -95,7 +93,7 @@ in
     gitleaks = {
       enable = true;
       name = "Detect hardcoded secrets";
-      entry = "${pkgs-unstable.gitleaks}/bin/gitleaks git --pre-commit --redact --staged --verbose";
+      entry = "${pkgs.gitleaks}/bin/gitleaks git --pre-commit --redact --staged --verbose";
       language = "system";
       pass_filenames = false;
     };
@@ -103,11 +101,11 @@ in
 
   enterShell = ''
     source $UV_PROJECT_ENVIRONMENT/bin/activate
-    ${pkgs-unstable.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
+    ${pkgs.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
     export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   '';
 
   # enterTest = ''
-  #   ${pkgs-unstable.python312Packages.pytest}/bin/pytest .
+  #   ${pkgs.python312Packages.pytest}/bin/pytest .
   # '';
 }
