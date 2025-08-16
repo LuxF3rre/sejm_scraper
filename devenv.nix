@@ -10,7 +10,11 @@ in
   dotenv.enable = true;
   claude.code.enable = true;
 
-  env.UV_VENV_CLEAR = 1;
+  env = {
+    UV_VENV_CLEAR = 1;
+    SEJM_SCRAPER_DEBUG = "true";
+    DUCKDB_PATH = "sejm_scraper.duckdb";
+  };
 
   packages = [
     pkgs-unstable.python312Packages.python-lsp-server
