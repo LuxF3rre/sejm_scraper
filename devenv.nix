@@ -94,10 +94,12 @@
     };
   };
 
+  # if not using cachix you may need to install and expose
+  # dynamically linked dependencies, like this in enterShell
+  # export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   enterShell = ''
     source $UV_PROJECT_ENVIRONMENT/bin/activate
     ${pkgs.uv}/bin/uv pip install --python $UV_PROJECT_ENVIRONMENT/bin/python -e .
-    export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
   '';
 
   # enterTest = ''
