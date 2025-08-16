@@ -82,6 +82,6 @@ class PartyInTerm(SQLModel, table=True):
 
 
 def create_db_and_tables() -> None:
-    logger.info("Creating database and tables")
+    logger.info("Preparing database and tables")
     SQLModel.metadata.create_all(ENGINE)
-    logger.debug("Successfully created database and tables")
+    logger.debug("Successfully prepared database and tables")
