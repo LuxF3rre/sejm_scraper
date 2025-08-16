@@ -295,7 +295,7 @@ wheels = [
 [[package]]
 name = "sejm-scraper"
 version = "4.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "duckdb-engine" },

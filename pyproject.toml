@@ -17,6 +17,13 @@ dependencies = [
     "typer>=0.15.4",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+sejm-scraper = "sejm_scraper:__main__.app"
+
 [dependency-groups]
 dev = []
 
