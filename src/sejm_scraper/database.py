@@ -7,7 +7,7 @@ from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper import api_schemas
 
-DEBUG = bool(os.getenv("SEJM_SCRAPER_DEBUG", None))
+DEBUG = True if os.getenv("SEJM_SCRAPER_DEBUG", None) == "true" else False
 
 DUCKDB_URL = "duckdb:///sejm_scraper.duckdb"
 ENGINE = create_engine(DUCKDB_URL, echo=DEBUG)
