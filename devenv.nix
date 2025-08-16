@@ -5,6 +5,8 @@
 }:
 
 {
+  cachix.enable = true;
+  cachix.pull = [ "pre-commit-hooks" ];
   dotenv.enable = true;
   claude.code.enable = true;
 
