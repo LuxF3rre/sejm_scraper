@@ -36,5 +36,10 @@ jobs:
       - name: Test with ty
         run: uvx ty check ./src/ --python ./.venv/
 
-      # - name: Test with pytest
-      #   run: uvx pytest
+      - name: Test with pytest
+        run: uv run pytest -v --cov --cov-branch --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

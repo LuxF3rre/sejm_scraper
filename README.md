@@ -6,6 +6,7 @@
 [![imports - isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![ty - checked](https://img.shields.io/badge/ty-checked-green)](https://github.com/astral-sh/ty)
 [![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/LuxF3rre/sejm_scraper/branch/main/graph/badge.svg)](https://codecov.io/gh/LuxF3rre/repo-sejm_scraper)
 
 ## Overview
 

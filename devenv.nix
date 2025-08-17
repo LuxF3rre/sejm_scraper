@@ -18,7 +18,6 @@
     pkgs.python312Packages.ipython
     pkgs.python312Packages.ipdb
     pkgs.python312Packages.scalene
-    pkgs.python312Packages.pytest
     pkgs.ruff
     pkgs.ty
     pkgs.commitizen
@@ -65,7 +64,7 @@
       entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
       after = [ "uv-sync" ];
     };
-    name-tests-test.enable = true;
+    # name-tests-test.enable = true;
     nil.enable = true;
     nixfmt-rfc-style.enable = true;
     markdownlint.enable = true;
@@ -102,7 +101,7 @@
     source $UV_PROJECT_ENVIRONMENT/bin/activate
   '';
 
-  # enterTest = ''
-  #   ${pkgs.python312Packages.pytest}/bin/pytest .
-  # '';
+  enterTest = ''
+    pytest -v --cov --cov-branch --cov-report=xml
+  '';
 }
