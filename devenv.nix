@@ -7,6 +7,7 @@
 {
   dotenv.enable = true;
   claude.code.enable = true;
+  devcontainer.enable = true;
 
   env = {
     SEJM_SCRAPER_DEBUG = "true";
