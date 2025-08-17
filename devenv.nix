@@ -19,8 +19,6 @@
     pkgs.python312Packages.ipython
     pkgs.python312Packages.ipdb
     pkgs.python312Packages.scalene
-    pkgs.ruff
-    pkgs.ty
     pkgs.commitizen
     pkgs.gitleaks
     pkgs.cruft
@@ -46,7 +44,7 @@
     ty = {
       enable = true;
       name = "ty static analysis";
-      entry = "bash -c '${pkgs.ty}/bin/ty check --python \${UV_PROJECT_ENVIRONMENT#$PWD/}'";
+      entry = "ty check";
       language = "system";
     };
     uv-sync = {
@@ -62,8 +60,15 @@
     };
     uv-export = {
       enable = true;
-      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet";
+      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements.txt --quiet --no-dev";
       after = [ "uv-sync" ];
+      pass_filenames = false;
+    };
+    uv-export-dev = {
+      enable = true;
+      entry = "${pkgs.uv}/bin/uv export --format requirements.txt -o requirements-dev.txt --quiet";
+      after = [ "uv-sync" ];
+      pass_filenames = false;
     };
     # name-tests-test.enable = true;
     nil.enable = true;

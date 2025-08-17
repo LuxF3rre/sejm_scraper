@@ -26,10 +26,10 @@ jobs:
         run: uv sync --all-extras
 
       - name: Lint with ruff
-        run: uvx ruff check ./src/
+        run: uv run ruff check
 
       - name: Test with ty
-        run: uvx ty check ./src/ --python ./.venv/
+        run: uv run ty check
 
       - name: Test with pytest
         run: uv run pytest -v --cov --cov-branch --cov-report=xml
