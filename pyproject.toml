@@ -25,7 +25,12 @@ build-backend = "hatchling.build"
 sejm-scraper = "sejm_scraper.__main__:app"
 
 [dependency-groups]
-dev = []
+dev = [
+    "hypothesis>=6.138.2",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "respx>=0.22.0",
+]
 
 [tool.black]
 target-version = ["py312"]
@@ -96,8 +101,8 @@ known-first-party = ["sejm_scraper"]
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
-# Tests can use magic values, assertions, and relative imports
-"tests/**/*" = ["PLR2004", "S101", "TID252"]
+# Tests can use magic values, assertions, relative imports, and exceed line length
+"tests/**/*" = ["PLR2004", "S101", "TID252", "E501"]
 
 [tool.pytest.ini_options]
 pythonpath = "src"
