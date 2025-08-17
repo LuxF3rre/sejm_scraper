@@ -18,7 +18,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}
+          key: ${{ runner.os }}-python-${{ hashFiles('uv.lock') }}
           restore-keys: |
             ${{ runner.os }}-python-
 
