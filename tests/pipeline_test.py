@@ -9,7 +9,7 @@ from sejm_scraper import database, pipeline
 def test_cold_resume_pipeline(monkeypatch):
     monkeypatch.setattr(pipeline, "_get_most_recent_voting", lambda _: None)
 
-    database.create_db_and_tables()
+    database.prepare_db_and_tables()
     pipeline.resume_pipeline()
 
 
@@ -62,5 +62,5 @@ def test_hot_resume_pipeline(monkeypatch):
         ),
     )
 
-    database.create_db_and_tables()
+    database.prepare_db_and_tables()
     pipeline.resume_pipeline()

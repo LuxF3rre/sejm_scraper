@@ -36,7 +36,7 @@ def prepare_database():
     """
     Prepare the database for the scraping pipeline.
     """
-    database.create_db_and_tables()
+    database.prepare_db_and_tables()
 
 
 if __name__ == "__main__":

@@ -81,7 +81,7 @@ class PartyInTerm(SQLModel, table=True):
     member_count: int
 
 
-def create_db_and_tables() -> None:
+def prepare_db_and_tables() -> None:
     logger.info("Preparing database and tables")
     SQLModel.metadata.create_all(ENGINE)
     logger.debug("Successfully prepared database and tables")
