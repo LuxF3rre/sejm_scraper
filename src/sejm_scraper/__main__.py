@@ -16,26 +16,20 @@ def start_pipeline(
     from_voting: int = typer.Option(
         None, help="Start from a specific voting number"
     ),
-):
-    """
-    Start the scraping pipeline to collect data from the Sejm API.
-    """
+) -> None:
+    """Start the scraping pipeline to collect data from the Sejm API."""
     pipeline.start_pipeline(from_term, from_sitting, from_voting)
 
 
 @app.command()
-def resume_pipeline():
-    """
-    Resume the scraping pipeline to collect data from the Sejm API.
-    """
+def resume_pipeline() -> None:
+    """Resume the scraping pipeline to collect data from the Sejm API."""
     pipeline.resume_pipeline()
 
 
 @app.command()
-def prepare_database():
-    """
-    Prepare the database for the scraping pipeline.
-    """
+def prepare_database() -> None:
+    """Prepare the database for the scraping pipeline."""
     database.prepare_db_and_tables()
 
 

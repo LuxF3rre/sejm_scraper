@@ -1,6 +1,6 @@
 from datetime import date, datetime
-from enum import Enum
-from typing import Literal, NewType, Union
+from enum import StrEnum
+from typing import Literal, NewType
 
 from pydantic import BaseModel, Field
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class TermSchema(BaseModel):
     number: int = Field(validation_alias="num")
     from_date: date = Field(validation_alias="from")
-    to_date: Union[date, None] = Field(default=None, validation_alias="to")
+    to_date: date | None = Field(default=None, validation_alias="to")
 
 
 class SittingSchema(BaseModel):
@@ -21,7 +21,7 @@ OptionIndex = NewType("OptionIndex", int)
 
 class VotingOptionSchema(BaseModel):
     index: OptionIndex = Field(validation_alias="optionIndex")
-    description: Union[str, None] = Field(default=None)
+    description: str | None = Field(default=None)
 
 
 class VotingSchema(BaseModel):
@@ -31,14 +31,14 @@ class VotingSchema(BaseModel):
     day_number: int = Field(validation_alias="sittingDay")
     date: datetime = Field()
     title: str = Field()
-    description: Union[str, None] = Field(default=None)
-    topic: Union[str, None] = Field(default=None)
-    voting_options: Union[list[VotingOptionSchema], None] = Field(
+    description: str | None = Field(default=None)
+    topic: str | None = Field(default=None)
+    voting_options: list[VotingOptionSchema] | None = Field(
         default=None, validation_alias="votingOptions"
     )
 
 
-class Vote(str, Enum):
+class Vote(StrEnum):
     YES = "YES"
     NO = "NO"
     ABSTAIN = "ABSTAIN"
@@ -54,13 +54,11 @@ MpInTermId = NewType("MpInTermId", int)
 
 class MpVoteSchema(BaseModel):
     mp_term_id: MpInTermId = Field(validation_alias="MP")
-    party_in_term: Union[str, None] = Field(
-        default=None, validation_alias="club"
-    )
-    multiple_option_votes: Union[dict[OptionIndex, Vote], None] = Field(
+    party_in_term: str | None = Field(default=None, validation_alias="club")
+    multiple_option_votes: dict[OptionIndex, Vote] | None = Field(
         default=None, validation_alias="listVotes"
     )
-    vote: Union[Vote, VOTE_VALID]
+    vote: Vote | VOTE_VALID
 
 
 class VotingWithMpVotesSchema(VotingSchema):
@@ -70,26 +68,24 @@ class VotingWithMpVotesSchema(VotingSchema):
 class MpInTermSchema(BaseModel):
     in_term_id: int = Field(validation_alias="id")
     first_name: str = Field(validation_alias="firstName")
-    second_name: Union[str, None] = Field(
-        default=None, validation_alias="secondName"
-    )
+    second_name: str | None = Field(default=None, validation_alias="secondName")
     last_name: str = Field(validation_alias="lastName")
     birth_date: date = Field(validation_alias="birthDate")
-    birth_place: Union[str, None] = Field(
+    birth_place: str | None = Field(
         default=None, validation_alias="birthLocation"
     )
-    education: Union[str, None] = Field(
+    education: str | None = Field(
         default=None, validation_alias="educationLevel"
     )
-    profession: Union[str, None] = Field(default=None)
-    voivodeship: Union[str, None] = Field(default=None)
+    profession: str | None = Field(default=None)
+    voivodeship: str | None = Field(default=None)
     district_name: str = Field(validation_alias="districtName")
     # Usually both fields are present, but sometimes
     # only inactivity_description field is present
-    inactivity_cause: Union[str, None] = Field(
+    inactivity_cause: str | None = Field(
         default=None, validation_alias="inactiveCause"
     )
-    inactivity_description: Union[str, None] = Field(
+    inactivity_description: str | None = Field(
         default=None, validation_alias="waiverDesc"
     )
 
@@ -100,7 +96,7 @@ PartyAbbreviation = NewType("PartyAbbreviation", str)
 class PartyInSchema(BaseModel):
     id: PartyAbbreviation
     name: str
-    phone: Union[str, None] = Field(default=None)
-    fax: Union[str, None] = Field(default=None)
-    email: Union[str, None] = Field(default=None)
+    phone: str | None = Field(default=None)
+    fax: str | None = Field(default=None)
+    email: str | None = Field(default=None)
     member_count: int = Field(validation_alias="membersCount")

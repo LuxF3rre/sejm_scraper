@@ -1,5 +1,3 @@
-from typing import Optional
-
 import httpx
 import sqlmodel
 
@@ -7,9 +5,9 @@ from sejm_scraper import database, scrape
 
 
 def start_pipeline(
-    from_term: Optional[int] = None,
-    from_sitting: Optional[int] = None,
-    from_voting: Optional[int] = None,
+    from_term: int | None = None,
+    from_sitting: int | None = None,
+    from_voting: int | None = None,
 ) -> None:
     if from_voting is not None and (from_sitting is None or from_term is None):
         msg = (

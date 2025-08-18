@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 from loguru import logger
@@ -11,7 +10,7 @@ PLANNED_SITTING_NUMBER = 0
 
 def scrape_terms(
     client: httpx.Client,
-    from_term: Optional[int] = None,
+    from_term: int | None = None,
 ) -> list[database.Term]:
     logger.info(
         f"Scraping terms starting from term {from_term}"
@@ -37,7 +36,7 @@ def scrape_terms(
 def scrape_sittings(
     client: httpx.Client,
     term: database.Term,
-    from_sitting: Optional[int] = None,
+    from_sitting: int | None = None,
 ) -> list[database.Sitting]:
     logger.info(
         f"Scraping sittings for term {term.number}"
@@ -78,7 +77,7 @@ def scrape_votings(
     client: httpx.Client,
     term: database.Term,
     sitting: database.Sitting,
-    from_voting: Optional[int] = None,
+    from_voting: int | None = None,
 ) -> ScrapedVotingsResult:
     logger.info(
         f"Scraping votings for term {term.number}, sitting {sitting.number}"
@@ -109,20 +108,20 @@ def scrape_votings(
             )
         )
         if voting.voting_options is not None:
-            for voting_option in voting.voting_options:
-                scraped_voting_options.append(
-                    database.VotingOption(
-                        id=database_key_utils.generate_voting_option_natural_key(
-                            term=term,
-                            sitting=sitting,
-                            voting=voting,
-                            voting_option_index=voting_option.index,
-                        ),
-                        voting_id=voting_id,
-                        index=voting_option.index,
-                        description=voting_option.description,
-                    )
+            scraped_voting_options.extend(
+                database.VotingOption(
+                    id=database_key_utils.generate_voting_option_natural_key(
+                        term=term,
+                        sitting=sitting,
+                        voting=voting,
+                        voting_option_index=voting_option.index,
+                    ),
+                    voting_id=voting_id,
+                    index=voting_option.index,
+                    description=voting_option.description,
                 )
+                for voting_option in voting.voting_options
+            )
         else:
             # If there are no voting options, we create a default one
             scraped_voting_options.append(
@@ -305,23 +304,21 @@ def scrape_parties_in_term(
         client=client, term=term.number
     )
 
-    scraped_parties_in_term = []
-
-    for party_in_term in parties_in_term:
-        scraped_parties_in_term.append(
-            database.PartyInTerm(
-                id=database_key_utils.generate_party_in_term_natural_key(
-                    term=term, party_in_term=party_in_term
-                ),
-                term_id=term.id,
-                abbreviation=party_in_term.id,
-                name=party_in_term.name,
-                phone=party_in_term.phone,
-                fax=party_in_term.fax,
-                email=party_in_term.email,
-                member_count=party_in_term.member_count,
-            )
+    scraped_parties_in_term = [
+        database.PartyInTerm(
+            id=database_key_utils.generate_party_in_term_natural_key(
+                term=term, party_in_term=party_in_term
+            ),
+            term_id=term.id,
+            abbreviation=party_in_term.id,
+            name=party_in_term.name,
+            phone=party_in_term.phone,
+            fax=party_in_term.fax,
+            email=party_in_term.email,
+            member_count=party_in_term.member_count,
         )
+        for party_in_term in parties_in_term
+    ]
 
     logger.debug(
         f"Scraped {len(scraped_parties_in_term)} parties for term {term.number}"

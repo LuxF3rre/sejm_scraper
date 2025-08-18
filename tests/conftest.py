@@ -7,7 +7,7 @@ from sejm_scraper import api_client, database
 
 
 @pytest.fixture(autouse=True)
-def use_in_memory_database(monkeypatch):
+def use_in_memory_database(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         database,
         "ENGINE",
@@ -17,7 +17,7 @@ def use_in_memory_database(monkeypatch):
 
 @pytest.fixture(autouse=True)
 @respx.mock(assert_all_called=False)
-def sejm_api_mock(monkeypatch):
+def sejm_api_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     mock_base_url = "https://sejm-mock.pl/api/v1"
     monkeypatch.setattr(api_client, "BASE_URL", mock_base_url)
     respx.get(f"{mock_base_url}/term").mock(
