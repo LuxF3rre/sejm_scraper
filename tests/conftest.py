@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import httpx
 import pytest
 import respx
@@ -5,13 +7,17 @@ from sqlmodel import create_engine
 
 from sejm_scraper import api_client, database
 
+if TYPE_CHECKING:
+    from sqlalchemy.engine.base import Engine
+
 
 @pytest.fixture(autouse=True)
 def use_in_memory_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    in_memory_database: Engine = create_engine("duckdb:///:memory:", echo=False)
     monkeypatch.setattr(
         database,
-        "ENGINE",
-        create_engine("duckdb:///:memory:", echo=False),
+        "get_engine",
+        lambda: in_memory_database,
     )
 
 

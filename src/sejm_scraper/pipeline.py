@@ -22,7 +22,7 @@ def start_pipeline(
 
     with (
         httpx.Client() as http_client,
-        sqlmodel.Session(database.ENGINE) as database_client,
+        sqlmodel.Session(database.get_engine()) as database_client,
     ):
         # Terms
         terms = scrape.scrape_terms(client=http_client, from_term=from_term)
@@ -146,7 +146,7 @@ def _get_most_recent_term(
 
 
 def resume_pipeline() -> None:
-    with sqlmodel.Session(database.ENGINE) as database_client:
+    with sqlmodel.Session(database.get_engine()) as database_client:
         most_recent_voting = _get_most_recent_voting(database_client)
 
         if most_recent_voting is None:
