@@ -84,7 +84,26 @@ def start_pipeline(
                         voting=voting,
                     )
                     for vote in votes:
-                        database_client.merge(vote)
+                        sql = sqlmodel.text("""
+                            INSERT OR REPLACE INTO vote (
+                                id,
+                                voting_option_id,
+                                mp_in_term_id,
+                                party_in_term_id,
+                                vote
+                            )
+                            VALUES (
+                                :id,
+                                :voting_option_id,
+                                :mp_in_term_id,
+                                :party_in_term_id,
+                                :vote
+                            );
+                        """)
+                        database_client.exec(
+                            sql,
+                            params=vote.model_dump(),
+                        )
                     database_client.commit()
 
 
