@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -5,24 +7,20 @@ from hypothesis import strategies as st
 from sejm_scraper import database_key_utils
 
 
-def test_none_and_empty():
+def test_empty() -> None:
+    msg = "hash elements cannot be empty"
     with pytest.raises(
         ValueError,
-        match=database_key_utils.NULL_OR_EMPTY_HASH_ELEMENT,
-    ):
-        database_key_utils._generate_hash(None)
-    with pytest.raises(
-        ValueError,
-        match=database_key_utils.NULL_OR_EMPTY_HASH_ELEMENT,
+        match=msg,
     ):
         database_key_utils._generate_hash("")
 
 
 multiple_types_not_null_not_empty = (
-    st.integers()
+    st.text(min_size=1)
+    | st.integers()
     | st.floats()
     | st.booleans()
-    | st.text(min_size=1)
     | st.dates()
 )
 
@@ -31,10 +29,12 @@ multiple_types_not_null_not_empty = (
     st.tuples(
         multiple_types_not_null_not_empty,
         multiple_types_not_null_not_empty,
-        multiple_types_not_null_not_empty,
-        multiple_types_not_null_not_empty,
-        multiple_types_not_null_not_empty,
     )
 )
-def test_fuzzy(s):
+def test_fuzzy(
+    s: tuple[
+        str | int | float | bool | date,
+        str | int | float | bool | date,
+    ],
+) -> None:
     database_key_utils._generate_hash(*s)

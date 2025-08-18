@@ -1,12 +1,13 @@
 from datetime import date
 
+import pytest
 import respx
 
 from sejm_scraper import database, pipeline
 
 
 @respx.mock
-def test_cold_resume_pipeline(monkeypatch):
+def test_cold_resume_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(pipeline, "_get_most_recent_voting", lambda _: None)
 
     database.prepare_db_and_tables()
@@ -14,7 +15,7 @@ def test_cold_resume_pipeline(monkeypatch):
 
 
 @respx.mock
-def test_hot_resume_pipeline(monkeypatch):
+def test_hot_resume_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         pipeline,
         "_get_most_recent_voting",

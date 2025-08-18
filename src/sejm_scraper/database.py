@@ -1,13 +1,12 @@
 import os
 from datetime import date
-from typing import Union
 
 from loguru import logger
 from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper import api_schemas
 
-DEBUG = True if os.getenv("SEJM_SCRAPER_DEBUG", None) == "true" else False
+DEBUG = os.getenv("SEJM_SCRAPER_DEBUG", None) == "true"
 
 DUCKDB_URL = "duckdb:///" + os.getenv("DUCKDB_PATH", "sejm_scraper.duckdb")
 ENGINE = create_engine(DUCKDB_URL, echo=DEBUG)
@@ -17,7 +16,7 @@ class Term(SQLModel, table=True):
     id: str = Field(primary_key=True)
     number: int
     from_date: date
-    to_date: Union[date, None]
+    to_date: date | None
 
 
 class Sitting(SQLModel, table=True):
@@ -34,22 +33,22 @@ class Voting(SQLModel, table=True):
     day_number: int
     date: date
     title: str
-    description: Union[str, None]
-    topic: Union[str, None]
+    description: str | None
+    topic: str | None
 
 
 class VotingOption(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_id: str = Field(foreign_key="voting.id")
     index: int
-    description: Union[str, None]
+    description: str | None
 
 
 class Vote(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
     mp_in_term_id: str = Field(foreign_key="mpinterm.id")
-    party_in_term_id: Union[str, None] = Field(foreign_key="partyinterm.id")
+    party_in_term_id: str | None = Field(foreign_key="partyinterm.id")
     vote: api_schemas.Vote
 
 
@@ -58,16 +57,16 @@ class MpInTerm(SQLModel, table=True):
     term_id: str = Field(foreign_key="term.id")
     in_term_id: int
     first_name: str
-    second_name: Union[str, None]
+    second_name: str | None
     last_name: str
     birth_date: date
-    birth_place: Union[str, None]
-    education: Union[str, None]
-    profession: Union[str, None]
-    voivodeship: Union[str, None]
+    birth_place: str | None
+    education: str | None
+    profession: str | None
+    voivodeship: str | None
     district_name: str
-    inactivity_cause: Union[str, None]
-    inactivity_description: Union[str, None]
+    inactivity_cause: str | None
+    inactivity_description: str | None
 
 
 class PartyInTerm(SQLModel, table=True):
@@ -75,9 +74,9 @@ class PartyInTerm(SQLModel, table=True):
     term_id: str = Field(foreign_key="term.id")
     abbreviation: str
     name: str
-    phone: Union[str, None]
-    fax: Union[str, None]
-    email: Union[str, None]
+    phone: str | None
+    fax: str | None
+    email: str | None
     member_count: int
 
 

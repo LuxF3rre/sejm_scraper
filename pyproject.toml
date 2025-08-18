@@ -37,35 +37,52 @@ dev = [
 [tool.black]
 target-version = ["py312"]
 line-length = 80
-skip-string-normalization = true
+skip-string-normalization = false
 
 [tool.ruff]
+preview = true
 target-version = "py312"
 line-length = 80
 lint.select = [
     "A",
+    "ANN",
     "ARG",
     "B",
+    "BLE",
     "C",
+    "DOC",
     "DTZ",
     "E",
     "EM",
+    "ERA",
     "F",
     "FBT",
+    "FBT",
+    "FLY",
+    "FURB",
     "I",
     "ICN",
+    "INT",
     "ISC",
     "N",
+    "PERF",
+    "PIE",
     "PLC",
     "PLE",
     "PLR",
     "PLW",
     "PT",
+    "PTH",
     "Q",
+    "RET",
+    "RSE",
     "RUF",
     "S",
+    "SIM",
     "T",
+    "TC",
     "TID",
+    "TRY",
     "UP",
     "W",
     "YTT",
@@ -85,11 +102,11 @@ lint.ignore = [
     "PLR0912",
     "PLR0913",
     "PLR0915",
-    "D211",    # no-blank-line-before-class
-    "D213",    # multi-line-summary-second-line
-    "ISC001",  # single-line-implicit-string-concatenation
-    "UP007",   # allow Union syntax for pydantic
-    "UP045",   # allow Optional syntax for pydantic
+    # Conflicting rules
+    "D211",
+    "D213",
+    # Allow assigning to variables that is immediately returned
+    "RET504",
 ]
 lint.unfixable = [
     # Don't touch unused imports
@@ -140,9 +157,6 @@ source = ["sejm_scraper"]
 
 [tool.coverage.report]
 show_missing = true
-
-# [tool.ty.environment]
-# python = "./.devenv/state/venv"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
