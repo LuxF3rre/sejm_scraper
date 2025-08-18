@@ -2,14 +2,20 @@ import os
 from datetime import date
 
 from loguru import logger
+from sqlalchemy.engine.base import Engine
 from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper import api_schemas
 
-DEBUG = os.getenv("SEJM_SCRAPER_DEBUG", None) == "true"
 
-DUCKDB_URL = "duckdb:///" + os.getenv("DUCKDB_PATH", "sejm_scraper.duckdb")
-ENGINE = create_engine(DUCKDB_URL, echo=DEBUG)
+def get_engine() -> Engine:
+    duckdb_url = "duckdb:///" + os.getenv(
+        "SEJM_SCRAPER_DUCKDB_PATH",
+        "sejm_scraper.duckdb",
+    )
+    debug_verbose = os.getenv("SEJM_SCRAPER_DEBUG_VERBOSE", None) == "true"
+    engine = create_engine(duckdb_url, echo=debug_verbose)
+    return engine
 
 
 class Term(SQLModel, table=True):
@@ -82,5 +88,5 @@ class PartyInTerm(SQLModel, table=True):
 
 def prepare_db_and_tables() -> None:
     logger.info("Preparing database and tables")
-    SQLModel.metadata.create_all(ENGINE)
+    SQLModel.metadata.create_all(get_engine())
     logger.debug("Successfully prepared database and tables")

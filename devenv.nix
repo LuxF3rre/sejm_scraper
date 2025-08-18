@@ -11,7 +11,8 @@
 
   env = {
     SEJM_SCRAPER_DEBUG = "true";
-    DUCKDB_PATH = "sejm_scraper.duckdb";
+    SEJM_SCRAPER_DEBUG_VERBOSE = "false";
+    SEJM_SCRAPER_DUCKDB_PATH = "sejm_scraper.duckdb";
   };
 
   packages = [
