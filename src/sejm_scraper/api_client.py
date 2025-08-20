@@ -1,5 +1,3 @@
-from typing import TypeVar
-
 import httpx
 from loguru import logger
 from pydantic import BaseModel
@@ -14,8 +12,6 @@ RETRY_SETTINGS = {
 }
 BASE_URL = "https://api.sejm.gov.pl/sejm"
 TIMEOUT = 30
-
-T = TypeVar("T", bound=BaseModel)
 
 
 @retry(**RETRY_SETTINGS)
