@@ -8,17 +8,27 @@ app = typer.Typer()
 @app.command()
 def start_pipeline(
     from_term: int = typer.Option(
-        None, help="Start from a specific term number"
+        None,
+        help="Start from a specific term number.",
     ),
     from_sitting: int = typer.Option(
-        None, help="Start from a specific sitting number"
+        None,
+        help="Start from a specific sitting number, requires from_term.",
     ),
     from_voting: int = typer.Option(
-        None, help="Start from a specific voting number"
+        None,
+        help=(
+            "Start from a specific voting number,"
+            " requires from_sitting and from_term."
+        ),
     ),
 ) -> None:
     """Start the scraping pipeline to collect data from the Sejm API."""
-    pipeline.start_pipeline(from_term, from_sitting, from_voting)
+    pipeline.start_pipeline(
+        from_term,
+        from_sitting,
+        from_voting,
+    )
 
 
 @app.command()
