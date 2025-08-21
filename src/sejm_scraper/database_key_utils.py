@@ -42,7 +42,7 @@ def generate_voting_natural_key(
         sitting.number,
         voting.day_number,
         voting.number,
-        voting.date,
+        voting.date_time,
     )
 
 
@@ -57,7 +57,7 @@ def generate_voting_option_natural_key(
         sitting.number,
         voting.day_number,
         voting.number,
-        voting.date,
+        voting.date_time,
         voting_option_index,
     )
 
@@ -74,7 +74,7 @@ def generate_vote_natural_key(
         sitting.number,
         voting.day_number,
         voting.number,
-        voting.date,
+        voting.date_time,
         voting_option_index,
         mp_in_term_id,
     )
