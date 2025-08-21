@@ -102,7 +102,7 @@ def scrape_votings(
                 sitting_id=sitting.id,
                 day_number=voting.day_number,
                 number=voting.number,
-                date=voting.date,
+                date_time=voting.date_time,
                 title=voting.title,
                 description=voting.description,
                 topic=voting.topic,

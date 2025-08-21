@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, datetime
 
 from loguru import logger
 from sqlalchemy.engine.base import Engine
@@ -37,7 +37,7 @@ class Voting(SQLModel, table=True):
     sitting_id: str = Field(foreign_key="sitting.id")
     number: int
     day_number: int
-    date: date
+    date_time: datetime
     title: str
     description: str | None
     topic: str | None

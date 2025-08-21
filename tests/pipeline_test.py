@@ -24,7 +24,7 @@ def test_hot_resume_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
             sitting_id="00037f39cf870a1f49129f9c82d935665d352ffd25ea3296208f6f7b16fd654f",
             number=205,
             day_number=6,
-            date=date(2025, 8, 5),
+            date_time=date(2025, 8, 5),
             title=(
                 "Pkt. 56 Sprawozdanie z działalności"
                 " Najwyższej Izby Kontroli w 2024 roku"
