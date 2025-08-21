@@ -105,6 +105,7 @@ def scrape_votings(
                 date=voting.date,
                 title=voting.title,
                 description=voting.description,
+                topic=voting.topic,
                 majority_type=voting.majority_type,
                 majority_votes=voting.majority_votes,
             )
