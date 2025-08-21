@@ -105,6 +105,8 @@ def scrape_votings(
                 date=voting.date,
                 title=voting.title,
                 description=voting.description,
+                majority_type=voting.majority_type,
+                majority_votes=voting.majority_votes,
             )
         )
         if voting.voting_options is not None:

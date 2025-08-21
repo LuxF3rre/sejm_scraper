@@ -5,6 +5,12 @@ from typing import Literal, NewType
 from pydantic import BaseModel, Field
 
 
+class MajorityType(StrEnum):
+    SIMPLE_MAJORITY = "SIMPLE_MAJORITY"
+    ABSOLUTE_MAJORITY = "ABSOLUTE_MAJORITY"
+    STATUTORY_MAJORITY = "STATUTORY_MAJORITY"
+
+
 class TermSchema(BaseModel):
     number: int = Field(validation_alias="num")
     from_date: date = Field(validation_alias="from")
@@ -36,6 +42,8 @@ class VotingSchema(BaseModel):
     voting_options: list[VotingOptionSchema] | None = Field(
         default=None, validation_alias="votingOptions"
     )
+    majority_type: MajorityType = Field(validation_alias="majorityType")
+    majority_votes: int = Field(validation_alias="majorityVotes")
 
 
 class Vote(StrEnum):

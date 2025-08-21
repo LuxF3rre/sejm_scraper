@@ -41,6 +41,8 @@ class Voting(SQLModel, table=True):
     title: str
     description: str | None
     topic: str | None
+    majority_type: api_schemas.MajorityType
+    majority_votes: int
 
 
 class VotingOption(SQLModel, table=True):
