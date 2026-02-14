@@ -1,5 +1,6 @@
 # Sejm Scraper
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/LuxF3rre/sejm_scraper)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/badge/type%20checker-ty-blue.svg)](https://github.com/astral-sh/ty)
@@ -37,6 +38,10 @@ The API models MPs per term — the same person gets a different ID each time. T
 - A previously missing field (like birthplace) gets backfilled later.
 
 You'll want to deduplicate these if you're doing cross-term analysis.
+
+## Documentation
+
+Full project documentation is available at [DeepWiki](https://deepwiki.com/LuxF3rre/sejm_scraper).
 
 ## Features
 
