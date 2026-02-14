@@ -1,5 +1,4 @@
 import httpx
-from loguru import logger
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -7,107 +6,179 @@ from sejm_scraper import api_schemas
 
 RETRY_SETTINGS = {
     "stop": stop_after_attempt(3),
-    "wait": wait_exponential(multiplier=1, min=4, max=10),
+    "wait": wait_exponential(multiplier=1, min=4, max=30),
     "reraise": True,
 }
 BASE_URL = "https://api.sejm.gov.pl/sejm"
 TIMEOUT = 30
 
 
-@retry(**RETRY_SETTINGS)
-def fetch_votes(
-    client: httpx.Client,
+@retry(**RETRY_SETTINGS)  # ty: ignore[no-matching-overload]
+async def fetch_votes(
+    *,
+    client: httpx.AsyncClient,
     term: int,
     sitting: int,
     voting: int,
 ) -> api_schemas.VotingWithMpVotesSchema:
-    logger.debug(
-        f"Fetching votes for term {term}, sitting {sitting}, voting {voting}"
-    )
-    response = client.get(
+    """Fetch detailed voting results including individual MP votes.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+        sitting: Sitting number within the term.
+        voting: Voting number within the sitting.
+
+    Returns:
+        Voting data with individual MP vote records.
+    """
+    response = await client.get(
         f"{BASE_URL}/term{term}/votings/{sitting}/{voting}",
         timeout=TIMEOUT,
-    ).raise_for_status()
-    logger.debug(
-        f"Successfully fetched votes for term {term},"
-        f" sitting {sitting}, voting {voting}"
     )
+    response.raise_for_status()
     return api_schemas.VotingWithMpVotesSchema(**response.json())
 
 
-@retry(**RETRY_SETTINGS)
-def _fetch_list[T: BaseModel](
-    client: httpx.Client,
+@retry(**RETRY_SETTINGS)  # ty: ignore[no-matching-overload]
+async def _fetch_list[T: BaseModel](
+    *,
+    client: httpx.AsyncClient,
     path: str,
     model: type[T],
 ) -> list[T]:
-    logger.debug(f"Fetching list from path: {path}")
-    response = client.get(
+    response = await client.get(
         f"{BASE_URL}/{path}",
         timeout=TIMEOUT,
-    ).raise_for_status()
-    result = [model(**item) for item in response.json()]
-    logger.debug(f"Fetched {len(result)} items from path: {path}")
-    return result
+    )
+    response.raise_for_status()
+    return [model(**item) for item in response.json()]
 
 
-def fetch_terms(
-    client: httpx.Client,
+async def fetch_terms(
+    *,
+    client: httpx.AsyncClient,
 ) -> list[api_schemas.TermSchema]:
-    logger.debug("Fetching terms")
-    return _fetch_list(
+    """Fetch all Sejm terms.
+
+    Args:
+        client: HTTP client instance.
+
+    Returns:
+        List of term schemas.
+    """
+    return await _fetch_list(
         client=client,
         path="term",
         model=api_schemas.TermSchema,
     )
 
 
-def fetch_sittings(
-    client: httpx.Client,
+async def fetch_sittings(
+    *,
+    client: httpx.AsyncClient,
     term: int,
 ) -> list[api_schemas.SittingSchema]:
-    logger.debug(f"Fetching sittings for term {term}")
-    return _fetch_list(
+    """Fetch all sittings for a given term.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+
+    Returns:
+        List of sitting schemas.
+    """
+    return await _fetch_list(
         client=client,
         path=f"term{term}/proceedings",
         model=api_schemas.SittingSchema,
     )
 
 
-def fetch_votings(
-    client: httpx.Client,
+async def fetch_votings(
+    *,
+    client: httpx.AsyncClient,
     term: int,
     sitting: int,
 ) -> list[api_schemas.VotingSchema]:
-    logger.debug(f"Fetching votings for term {term}, sitting {sitting}")
-    return _fetch_list(
+    """Fetch all votings for a given term and sitting.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+        sitting: Sitting number within the term.
+
+    Returns:
+        List of voting schemas.
+    """
+    return await _fetch_list(
         client=client,
         path=f"term{term}/votings/{sitting}",
         model=api_schemas.VotingSchema,
     )
 
 
-@retry(**RETRY_SETTINGS)
-def fetch_mps_in_term(
-    client: httpx.Client,
+async def fetch_voting_table(
+    *,
+    client: httpx.AsyncClient,
     term: int,
-) -> list[api_schemas.MpInTermSchema]:
-    logger.debug(f"Fetching MPs for term {term}")
-    return _fetch_list(
+) -> list[api_schemas.VotingTableEntrySchema]:
+    """Fetch the voting table for a term (flat list of sitting-day entries).
+
+    This endpoint exists for terms that lack proceedings data (terms 3-6).
+    Each entry maps a date to a proceeding (sitting) number.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+
+    Returns:
+        List of voting table entry schemas.
+    """
+    return await _fetch_list(
         client=client,
-        path=f"term{term}/MP",
-        model=api_schemas.MpInTermSchema,
+        path=f"term{term}/votings",
+        model=api_schemas.VotingTableEntrySchema,
     )
 
 
-@retry(**RETRY_SETTINGS)
-def fetch_parties_in_term(
-    client: httpx.Client,
+async def fetch_clubs(
+    *,
+    client: httpx.AsyncClient,
     term: int,
-) -> list[api_schemas.PartyInSchema]:
-    logger.debug(f"Fetching parties for term {term}")
-    return _fetch_list(
+) -> list[api_schemas.ClubSchema]:
+    """Fetch all clubs for a given term.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+
+    Returns:
+        List of club schemas.
+    """
+    return await _fetch_list(
         client=client,
         path=f"term{term}/clubs",
-        model=api_schemas.PartyInSchema,
+        model=api_schemas.ClubSchema,
+    )
+
+
+async def fetch_mps(
+    *,
+    client: httpx.AsyncClient,
+    term: int,
+) -> list[api_schemas.MpSchema]:
+    """Fetch all MPs for a given term.
+
+    Args:
+        client: HTTP client instance.
+        term: Sejm term number.
+
+    Returns:
+        List of MP schemas.
+    """
+    return await _fetch_list(
+        client=client,
+        path=f"term{term}/MP",
+        model=api_schemas.MpSchema,
     )

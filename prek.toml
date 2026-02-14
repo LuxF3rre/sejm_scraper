@@ -1,0 +1,61 @@
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v5.0.0"
+hooks = [
+  { id = "check-yaml" },
+  { id = "check-toml" },
+  { id = "check-json" },
+  { id = "end-of-file-fixer" },
+  { id = "trailing-whitespace" },
+  { id = "name-tests-test", args = ["--pytest-test-first"] },
+]
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.15.1"
+hooks = [
+  { id = "ruff-check", args = ["--fix"] },
+  { id = "ruff-format" },
+]
+
+[[repos]]
+repo = "https://github.com/igorshubovych/markdownlint-cli"
+rev = "v0.44.0"
+hooks = [
+  { id = "markdownlint" },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "ty",
+    name = "ty static analysis",
+    language = "system",
+    entry = "uv run ty check src",
+    pass_filenames = false,
+    types = ["python"],
+  },
+  {
+    id = "gitleaks",
+    name = "Detect hardcoded secrets",
+    language = "system",
+    entry = "gitleaks git --pre-commit --redact --staged --verbose",
+    pass_filenames = false,
+    always_run = true,
+  },
+  {
+    id = "nil",
+    name = "nil nix linter",
+    language = "system",
+    entry = "nil",
+    files = "\\.nix$",
+  },
+  {
+    id = "nixfmt",
+    name = "nixfmt-rfc-style",
+    language = "system",
+    entry = "nixfmt",
+    files = "\\.nix$",
+  },
+]
