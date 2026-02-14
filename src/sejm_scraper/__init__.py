@@ -1,15 +1,9 @@
-import os
-import sys
-
-from loguru import logger
-
-IS_DEBUG = os.getenv("SEJM_SCRAPER_DEBUG", None) == "true"
-
-logger.configure(
-    handlers=[
-        {
-            "sink": sys.stdout,
-            "level": "DEBUG" if IS_DEBUG else "INFO",
-        }
-    ]
-)
+__all__ = [
+    "api_client",
+    "api_schemas",
+    "cli",
+    "database",
+    "database_key_utils",
+    "pipeline",
+    "scrape",
+]

@@ -1,26 +1,31 @@
 from dataclasses import dataclass
+from itertools import groupby
+from operator import attrgetter
 
 import httpx
-from loguru import logger
 
 from sejm_scraper import api_client, api_schemas, database, database_key_utils
 
 PLANNED_SITTING_NUMBER = 0
 
 
-def scrape_terms(
-    client: httpx.Client,
+async def scrape_terms(
+    client: httpx.AsyncClient,
     from_term: int | None = None,
 ) -> list[database.Term]:
-    logger.info(
-        f"Scraping terms starting from term {from_term}"
-        if from_term
-        else "Scraping all terms"
-    )
-    terms = api_client.fetch_terms(client=client)
+    """Scrape Sejm terms from the API and convert to database models.
+
+    Args:
+        client: HTTP client instance.
+        from_term: If set, only include terms with number >= this value.
+
+    Returns:
+        List of Term database models with generated natural keys.
+    """
+    terms = await api_client.fetch_terms(client=client)
     if from_term is not None:
         terms = [term for term in terms if term.number >= from_term]
-    result = [
+    return [
         database.Term(
             id=database_key_utils.generate_term_natural_key(term=term),
             number=term.number,
@@ -29,20 +34,32 @@ def scrape_terms(
         )
         for term in terms
     ]
-    logger.debug(f"Scraped {len(result)} terms")
-    return result
 
 
-def scrape_sittings(
-    client: httpx.Client,
+@dataclass
+class ScrapedSittingsResult:
+    sittings: list[database.Sitting]
+    sitting_days: list[database.SittingDay]
+
+
+async def scrape_sittings(
+    client: httpx.AsyncClient,
     term: database.Term,
     from_sitting: int | None = None,
-) -> list[database.Sitting]:
-    logger.info(
-        f"Scraping sittings for term {term.number}"
-        + (f" starting from sitting {from_sitting}" if from_sitting else "")
-    )
-    sittings = api_client.fetch_sittings(client=client, term=term.number)
+) -> ScrapedSittingsResult:
+    """Scrape sittings for a term from the API.
+
+    Filters out planned sittings (number == 0).
+
+    Args:
+        client: HTTP client instance.
+        term: Term database model to scrape sittings for.
+        from_sitting: If set, only include sittings with number >= this value.
+
+    Returns:
+        Scraped sittings and their associated sitting days.
+    """
+    sittings = await api_client.fetch_sittings(client=client, term=term.number)
     sittings = [
         sitting
         for sitting in sittings
@@ -52,19 +69,101 @@ def scrape_sittings(
         sittings = [
             sitting for sitting in sittings if sitting.number >= from_sitting
         ]
-    result = [
-        database.Sitting(
-            id=database_key_utils.generate_sitting_natural_key(
-                sitting=sitting, term=term
-            ),
-            term_id=term.id,
-            title=sitting.title,
-            number=sitting.number,
+
+    scraped_sittings = []
+    scraped_sitting_days = []
+
+    for sitting in sittings:
+        sitting_id = database_key_utils.generate_sitting_natural_key(
+            sitting=sitting, term=term
         )
-        for sitting in sittings
-    ]
-    logger.debug(f"Scraped {len(result)} sittings for term {term.number}")
-    return result
+        scraped_sittings.append(
+            database.Sitting(
+                id=sitting_id,
+                term_id=term.id,
+                title=sitting.title,
+                number=sitting.number,
+            )
+        )
+        for day_date in sitting.dates:
+            scraped_sitting_days.append(
+                database.SittingDay(
+                    id=database_key_utils.generate_sitting_day_natural_key(
+                        term=term, sitting=sitting, day_date=day_date
+                    ),
+                    sitting_id=sitting_id,
+                    date=day_date,
+                )
+            )
+
+    return ScrapedSittingsResult(
+        sittings=scraped_sittings,
+        sitting_days=scraped_sitting_days,
+    )
+
+
+async def discover_sittings_from_votings(
+    client: httpx.AsyncClient,
+    term: database.Term,
+    from_sitting: int | None = None,
+) -> ScrapedSittingsResult:
+    """Discover sittings from the voting table for terms without proceedings.
+
+    Some older terms (e.g. 3-6) have voting data but no proceedings endpoint.
+    The `/term{N}/votings` endpoint returns a flat table mapping dates to
+    proceeding (sitting) numbers. This function groups those entries to
+    synthesize Sitting and SittingDay records.
+
+    Args:
+        client: HTTP client instance.
+        term: Term database model.
+        from_sitting: If set, only include sittings with number >= this value.
+
+    Returns:
+        Scraped sittings and their associated sitting days.
+    """
+    entries = await api_client.fetch_voting_table(
+        client=client, term=term.number
+    )
+    if from_sitting is not None:
+        entries = [e for e in entries if e.proceeding >= from_sitting]
+
+    sorted_entries = sorted(entries, key=attrgetter("proceeding"))
+
+    scraped_sittings = []
+    scraped_sitting_days = []
+
+    for proceeding_num, group in groupby(
+        sorted_entries, key=attrgetter("proceeding")
+    ):
+        group_entries = list(group)
+        sitting_stub = database.Sitting(
+            id="",
+            term_id=term.id,
+            title=f"Posiedzenie nr {proceeding_num}",
+            number=proceeding_num,
+        )
+        sitting_stub.id = database_key_utils.generate_sitting_natural_key(
+            sitting=sitting_stub, term=term
+        )
+        scraped_sittings.append(sitting_stub)
+
+        unique_dates = sorted({e.sitting_date for e in group_entries})
+        for day_date in unique_dates:
+            scraped_sitting_days.append(
+                database.SittingDay(
+                    id=database_key_utils.generate_sitting_day_natural_key(
+                        term=term, sitting=sitting_stub, day_date=day_date
+                    ),
+                    sitting_id=sitting_stub.id,
+                    date=day_date,
+                )
+            )
+
+    return ScrapedSittingsResult(
+        sittings=scraped_sittings,
+        sitting_days=scraped_sitting_days,
+    )
 
 
 @dataclass
@@ -73,17 +172,26 @@ class ScrapedVotingsResult:
     voting_options: list[database.VotingOption]
 
 
-def scrape_votings(
-    client: httpx.Client,
+async def scrape_votings(
+    client: httpx.AsyncClient,
     term: database.Term,
     sitting: database.Sitting,
     from_voting: int | None = None,
 ) -> ScrapedVotingsResult:
-    logger.info(
-        f"Scraping votings for term {term.number}, sitting {sitting.number}"
-        + (f" starting from voting {from_voting}" if from_voting else "")
-    )
-    votings = api_client.fetch_votings(
+    """Scrape votings and voting options for a sitting.
+
+    Creates default voting options for votings that have none.
+
+    Args:
+        client: HTTP client instance.
+        term: Term database model.
+        sitting: Sitting database model to scrape votings for.
+        from_voting: If set, only include votings with number >= this value.
+
+    Returns:
+        Scraped votings and their associated voting options.
+    """
+    votings = await api_client.fetch_votings(
         client=client, term=term.number, sitting=sitting.number
     )
     if from_voting is not None:
@@ -100,31 +208,41 @@ def scrape_votings(
             database.Voting(
                 id=voting_id,
                 sitting_id=sitting.id,
-                day_number=voting.day_number,
+                sitting_day=voting.sitting_day,
                 number=voting.number,
-                date_time=voting.date_time,
+                date=voting.date.date(),
                 title=voting.title,
                 description=voting.description,
                 topic=voting.topic,
+                kind=voting.kind,
+                yes=voting.yes,
+                no=voting.no,
+                abstain=voting.abstain,
+                not_participating=voting.not_participating,
+                present=voting.present,
+                total_voted=voting.total_voted,
                 majority_type=voting.majority_type,
                 majority_votes=voting.majority_votes,
+                against_all=voting.against_all,
             )
         )
         if voting.voting_options is not None:
-            scraped_voting_options.extend(
-                database.VotingOption(
-                    id=database_key_utils.generate_voting_option_natural_key(
-                        term=term,
-                        sitting=sitting,
-                        voting=voting,
-                        voting_option_index=voting_option.index,
-                    ),
-                    voting_id=voting_id,
-                    index=voting_option.index,
-                    description=voting_option.description,
+            for voting_option in voting.voting_options:
+                scraped_voting_options.append(
+                    database.VotingOption(
+                        id=database_key_utils.generate_voting_option_natural_key(
+                            term=term,
+                            sitting=sitting,
+                            voting=voting,
+                            voting_option_index=voting_option.index,
+                        ),
+                        voting_id=voting_id,
+                        index=voting_option.index,
+                        option_label=voting_option.option_label,
+                        description=voting_option.description,
+                        votes=voting_option.votes,
+                    )
                 )
-                for voting_option in voting.voting_options
-            )
         else:
             # If there are no voting options, we create a default one
             scraped_voting_options.append(
@@ -137,51 +255,101 @@ def scrape_votings(
                     ),
                     voting_id=voting_id,
                     index=api_schemas.OptionIndex(1),
-                    description="Default option (no options provided)",
+                    option_label="Default option (no options provided)",
+                    description=None,
+                    votes=0,
                 )
             )
 
-    logger.debug(
-        f"Scraped {len(scraped_votings)}"
-        f" votings and {len(scraped_voting_options)}"
-        f" voting options for term {term.number}, sitting {sitting.number}"
-    )
     return ScrapedVotingsResult(
         votings=scraped_votings,
         voting_options=scraped_voting_options,
     )
 
 
-@dataclass
-class ScrapedMpsInTermResult:
-    mps_in_term: list[database.MpInTerm]
-
-
-def scrape_mps_in_term(
-    client: httpx.Client,
+async def scrape_clubs(
+    client: httpx.AsyncClient,
     term: database.Term,
-) -> ScrapedMpsInTermResult:
-    logger.info(f"Scraping MPs for term {term.number}")
-    mps_in_term = api_client.fetch_mps_in_term(client=client, term=term.number)
+) -> list[database.Club]:
+    """Scrape clubs for a given term.
 
-    scraped_mps_in_term = []
+    Args:
+        client: HTTP client instance.
+        term: Term database model to scrape clubs for.
 
-    for mp in mps_in_term:
-        mp_in_term_id = database_key_utils.generate_mp_in_term_natural_key(
-            term=term,
-            mp=mp,
+    Returns:
+        List of Club database models.
+    """
+    clubs = await api_client.fetch_clubs(client=client, term=term.number)
+
+    return [
+        database.Club(
+            id=database_key_utils.generate_club_natural_key(
+                club=club, term=term
+            ),
+            term_id=term.id,
+            club_id=club.club_id,
+            name=club.name,
+            phone=club.phone,
+            fax=club.fax,
+            email=club.email,
+            members_count=club.members_count,
         )
+        for club in clubs
+    ]
 
-        scraped_mps_in_term.append(
-            database.MpInTerm(
-                id=mp_in_term_id,
-                in_term_id=mp.in_term_id,
-                term_id=term.id,
+
+@dataclass
+class ScrapedMpsResult:
+    mps: list[database.Mp]
+    mp_to_term_links: list[database.MpToTermLink]
+
+
+async def scrape_mps(
+    client: httpx.AsyncClient,
+    term: database.Term,
+) -> ScrapedMpsResult:
+    """Scrape MPs and their term links for a given term.
+
+    Args:
+        client: HTTP client instance.
+        term: Term database model to scrape MPs for.
+
+    Returns:
+        Scraped MP records and MP-to-term link records.
+    """
+    mps = await api_client.fetch_mps(client=client, term=term.number)
+
+    scraped_mps = []
+    mp_to_term_links = []
+
+    for mp in mps:
+        mp_id = database_key_utils.generate_mp_natural_key(mp=mp)
+
+        scraped_mps.append(
+            database.Mp(
+                id=mp_id,
                 first_name=mp.first_name,
                 second_name=mp.second_name,
                 last_name=mp.last_name,
                 birth_date=mp.birth_date,
                 birth_place=mp.birth_place,
+            )
+        )
+
+        mp_to_term_links.append(
+            database.MpToTermLink(
+                id=database_key_utils.generate_mp_to_term_link_natural_key(
+                    mp=mp, term=term
+                ),
+                mp_id=mp_id,
+                term_id=term.id,
+                in_term_id=mp.in_term_id,
+                active=mp.active,
+                club=mp.club,
+                district_num=mp.district_num,
+                number_of_votes=mp.number_of_votes,
+                email=mp.email,
                 education=mp.education,
                 profession=mp.profession,
                 voivodeship=mp.voivodeship,
@@ -191,25 +359,45 @@ def scrape_mps_in_term(
             )
         )
 
-    logger.debug(
-        f"Scraped {len(scraped_mps_in_term)} MPs for term {term.number}"
-    )
-    return ScrapedMpsInTermResult(
-        mps_in_term=scraped_mps_in_term,
+    return ScrapedMpsResult(
+        mps=scraped_mps,
+        mp_to_term_links=mp_to_term_links,
     )
 
 
-def scrape_votes(
-    client: httpx.Client,
+@dataclass
+class ScrapedVotesResult:
+    votes: list[database.VoteRecord]
+    voting_options: list[database.VotingOption]
+
+
+async def scrape_votes(
+    client: httpx.AsyncClient,
     term: database.Term,
     sitting: database.Sitting,
     voting: database.Voting,
-) -> list[database.Vote]:
-    logger.info(
-        f"Scraping votes for term {term.number}, sitting {sitting.number},"
-        f" voting {voting.number}"
-    )
-    voting_with_votes = api_client.fetch_votes(
+) -> ScrapedVotesResult:
+    """Scrape individual MP votes for a specific voting.
+
+    Handles both single-option and multiple-option votings. Also returns
+    VotingOption records derived from the detail endpoint to handle
+    inconsistencies between the list and detail API endpoints (e.g.
+    duplicate voting numbers in older terms).
+
+    Args:
+        client: HTTP client instance.
+        term: Term database model.
+        sitting: Sitting database model.
+        voting: Voting database model to scrape votes for.
+
+    Returns:
+        Scraped vote records and voting options from the detail endpoint.
+
+    Raises:
+        ValueError: If vote data is inconsistent (VOTE_VALID without
+            multiple option votes).
+    """
+    voting_with_votes = await api_client.fetch_votes(
         client=client,
         term=term.number,
         sitting=sitting.number,
@@ -218,28 +406,49 @@ def scrape_votes(
 
     votes = voting_with_votes.mp_votes
 
-    scraped_votes = []
+    # Build VotingOptions from the detail endpoint response. This
+    # ensures correct options exist even when the list endpoint
+    # disagrees (e.g. duplicate voting numbers in older terms).
+    scraped_voting_options: list[database.VotingOption] = []
+    if voting_with_votes.voting_options is not None:
+        for voting_option in voting_with_votes.voting_options:
+            scraped_voting_options.append(
+                database.VotingOption(
+                    id=database_key_utils.generate_voting_option_natural_key(
+                        term=term,
+                        sitting=sitting,
+                        voting=voting,
+                        voting_option_index=voting_option.index,
+                    ),
+                    voting_id=voting.id,
+                    index=voting_option.index,
+                    option_label=voting_option.option_label,
+                    description=voting_option.description,
+                    votes=voting_option.votes,
+                )
+            )
+    else:
+        scraped_voting_options.append(
+            database.VotingOption(
+                id=database_key_utils.generate_voting_option_natural_key(
+                    term=term,
+                    sitting=sitting,
+                    voting=voting,
+                    voting_option_index=api_schemas.OptionIndex(1),
+                ),
+                voting_id=voting.id,
+                index=api_schemas.OptionIndex(1),
+                option_label="Default option (no options provided)",
+                description=None,
+                votes=0,
+            )
+        )
+
+    scraped_votes: list[database.VoteRecord] = []
 
     for vote in votes:
-        logger.debug(
-            f"Processing vote for MP {vote.mp_term_id} in term {term.number},"
-            f" sitting {sitting.number}, voting {voting.number}"
-        )
-        mp_in_term_id = database_key_utils.generate_mp_in_term_natural_key(
-            term=term,
-            mp=api_schemas.MpInTermId(vote.mp_term_id),
-        )
-
-        party_in_term_id = (
-            database_key_utils.generate_party_in_term_natural_key(
-                term=term, party_in_term=vote.party_in_term
-            )
-            if vote.party_in_term is not None
-            else None
-        )
-
         if vote.multiple_option_votes is None:
-            if vote.vote == api_schemas.VOTE_VALID:
+            if vote.vote == "VOTE_VALID":
                 msg = (
                     "Invalid vote data: 'multiple_option_votes' "
                     "is None but 'vote' is 'VOTE_VALID'"
@@ -248,13 +457,13 @@ def scrape_votes(
 
             # Single option vote with default vote option
             scraped_votes.append(
-                database.Vote(
+                database.VoteRecord(
                     id=database_key_utils.generate_vote_natural_key(
                         term=term,
                         sitting=sitting,
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
-                        mp_in_term_id=mp_in_term_id,
+                        mp_term_id=vote.mp_term_id,
                     ),
                     voting_option_id=database_key_utils.generate_voting_option_natural_key(
                         term=term,
@@ -262,22 +471,22 @@ def scrape_votes(
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
                     ),
-                    mp_in_term_id=mp_in_term_id,
+                    mp_term_id=vote.mp_term_id,
                     vote=vote.vote,
-                    party_in_term_id=party_in_term_id,
+                    party=vote.party,
                 )
             )
         else:
             # Multiple options vote
             for voting_option, inner_vote in vote.multiple_option_votes.items():
                 scraped_votes.append(
-                    database.Vote(
+                    database.VoteRecord(
                         id=database_key_utils.generate_vote_natural_key(
                             term=term,
                             sitting=sitting,
                             voting=voting,
                             voting_option_index=voting_option,
-                            mp_in_term_id=mp_in_term_id,
+                            mp_term_id=vote.mp_term_id,
                         ),
                         voting_option_id=database_key_utils.generate_voting_option_natural_key(
                             term=term,
@@ -285,45 +494,13 @@ def scrape_votes(
                             voting=voting,
                             voting_option_index=voting_option,
                         ),
-                        mp_in_term_id=mp_in_term_id,
+                        mp_term_id=vote.mp_term_id,
                         vote=inner_vote,
-                        party_in_term_id=party_in_term_id,
+                        party=vote.party,
                     )
                 )
 
-    logger.debug(
-        f"Scraped {len(scraped_votes)} votes for term {term.number},"
-        f" sitting {sitting.number}, voting {voting.number}"
+    return ScrapedVotesResult(
+        votes=scraped_votes,
+        voting_options=scraped_voting_options,
     )
-    return scraped_votes
-
-
-def scrape_parties_in_term(
-    client: httpx.Client,
-    term: database.Term,
-) -> list[database.PartyInTerm]:
-    logger.info(f"Scraping parties for term {term.number}")
-    parties_in_term = api_client.fetch_parties_in_term(
-        client=client, term=term.number
-    )
-
-    scraped_parties_in_term = [
-        database.PartyInTerm(
-            id=database_key_utils.generate_party_in_term_natural_key(
-                term=term, party_in_term=party_in_term
-            ),
-            term_id=term.id,
-            abbreviation=party_in_term.id,
-            name=party_in_term.name,
-            phone=party_in_term.phone,
-            fax=party_in_term.fax,
-            email=party_in_term.email,
-            member_count=party_in_term.member_count,
-        )
-        for party_in_term in parties_in_term
-    ]
-
-    logger.debug(
-        f"Scraped {len(scraped_parties_in_term)} parties for term {term.number}"
-    )
-    return scraped_parties_in_term

@@ -1,202 +1,242 @@
 # Sejm Scraper
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![code style - Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![imports - isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
-[![ty - checked](https://img.shields.io/badge/ty-checked-green)](https://github.com/astral-sh/ty)
-[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![ty](https://img.shields.io/badge/type%20checker-ty-blue.svg)](https://github.com/astral-sh/ty)
+[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml)
 [![codecov](https://codecov.io/gh/LuxF3rre/sejm_scraper/branch/main/graph/badge.svg)](https://codecov.io/gh/LuxF3rre/repo-sejm_scraper)
 
-## Overview
+## What is this?
 
-### Problem
+The [Sejm API](https://api.sejm.gov.pl/) gives you access to terms, sittings, votings, votes, and MPs of the [Polish Sejm](https://en.wikipedia.org/wiki/Sejm). Unfortunately, working with it directly is painful:
 
-The [Sejm API](https://api.sejm.gov.pl/) provides access to details about the terms, sittings, votings, votes, MPs, and parties of the [Polish Sejm](https://en.wikipedia.org/wiki/Sejm). However, it presents several challenges:
+- No primary or foreign keys — you're on your own linking things together.
+- Nullable fields are undocumented — you find out at runtime.
+- Single-option and multi-option votings are handled inconsistently.
+- MPs are scoped per term, so the same person gets a new identity every election.
+- Older terms have missing or contradictory data (see [API quirks](#api-quirks)).
+- The API is slow and requires thousands of requests to get everything.
 
-- Lack of bulk data download option.
-- Absence of primary and foreign keys.
-- API documentation does not specify nullable constraints.
-- Inconsistent handling of votings that involve single or multiple voting options.
-- MPs and parties are defined per term rather than being treated as continuous entities across different terms.
+This scraper downloads all that data into a local [DuckDB](https://duckdb.org/) database with proper keys, constraints, and a normalized schema — so you can actually analyze it.
 
-### Solution
+### What it does
 
-- Scraper that downloads Sejm API entries on terms, sittings, votings, votes, MPs, and parties.
-- Database that includes tables with [natural keys](https://en.wikipedia.org/wiki/Natural_key), utilizing SHA-256 for hashing and enforced key constraints.
-- Schema validation of API responses alongside null constraints within the database.
-- Normalization of votings to accommodate single-option scenarios uniformly.
+- Generates [natural keys](https://en.wikipedia.org/wiki/Natural_key) (SHA-256) for every record, with enforced foreign keys and not-null constraints.
+- Validates every API response with Pydantic before storing anything.
+- Normalizes multi-option votings so single-option and multi-option cases look the same.
+- Merges MP identities across terms into a single global entity.
+- Discovers sittings from the voting table when the proceedings endpoint is empty (terms 3-6).
+- Reconciles voting options from detail endpoints to handle list/detail inconsistencies.
+
+### A note on MP deduplication
+
+The API models MPs per term — the same person gets a different ID each time. This scraper creates a global `Mp` record keyed by `(first_name, last_name, birth_date, birth_place)`, but this can produce duplicates when:
+
+- There are typos or inconsistencies in birthplace names.
+- An MP changes their last name (e.g. after marriage).
+- A previously missing field (like birthplace) gets backfilled later.
+
+You'll want to deduplicate these if you're doing cross-term analysis.
 
 ## Features
 
-- [x] Built with **🐍Python** and **🦆DuckDB**.
-- [x] Normalized data model with primary keys, foreign keys, and not null constrains.
-- [x] Reliable processing thanks to the custom client for [Sejm API](https://api.sejm.gov.pl/sejm/openapi/ui).
-- [x] Able to resume work from latest downloaded and a given term, sitting, and voting.
+- Normalized data model with primary keys, foreign keys, and not-null constraints.
+- Async HTTP with unlimited concurrent vote scraping per sitting.
+- Retry logic for flaky API responses.
+- Embedded DuckDB — no database server needed.
+- Resume from any term, sitting, or voting.
+
+## Tech stack
+
+- **Python 3.12+**
+- **DuckDB** — embedded analytical database
+- **SQLModel** — ORM layer
+- **Pydantic v2** — API response validation
+- **httpx** — async HTTP client
+- **anyio** — structured concurrency
+- **tenacity** — retry logic
+- **loguru** — structured logging
+- **ruff** — linting and formatting
+- **ty** — type checking
+- **uv** — package management
 
 ## Data model
 
 ```mermaid
 erDiagram
     Term {
-        string id PK
+        str id PK
         int number
         date from_date
-        date to_date "nullable"
+        date to_date
     }
 
     Sitting {
-        string id PK
-        string term_id FK
-        string title
+        str id PK
+        str term_id FK
+        str title
         int number
+    }
+
+    SittingDay {
+        str id PK
+        str sitting_id FK
+        date date
     }
 
     Voting {
-        string id PK
-        string sitting_id FK
+        str id PK
+        str sitting_id FK
+        int sitting_day
         int number
-        int day_number
         date date
-        string title
-        string description "nullable"
-        string topic "nullable"
+        str title
+        str description
+        str topic
+        str kind
+        int yes
+        int no
+        int abstain
+        int not_participating
+        int present
+        int total_voted
+        str majority_type
+        int majority_votes
+        int against_all
     }
 
     VotingOption {
-        string id PK
-        string voting_id FK
+        str id PK
+        str voting_id FK
         int index
-        string description "nullable"
+        str option_label
+        str description
+        int votes
     }
 
-    PartyInTerm {
-        string id PK
-        string term_id FK
-        string abbreviation
-        string name
-        string phone "nullable"
-        string fax "nullable"
-        string email "nullable"
-        int member_count
+    VoteRecord {
+        str id PK
+        str voting_option_id FK
+        int mp_term_id
+        str vote
+        str party
     }
 
-    Vote {
-        string id PK
-        string voting_option_id FK
-        string mp_in_term_id FK
-        string party_in_term_id FK "nullable"
-        string vote
+    Club {
+        str id PK
+        str term_id FK
+        str club_id
+        str name
+        str phone
+        str fax
+        str email
+        int members_count
     }
 
-    MpInTerm {
-        string id PK
-        string term_id FK
-        int in_term_id
-        string first_name
-        string second_name "nullable"
-        string last_name
+    Mp {
+        str id PK
+        str first_name
+        str second_name
+        str last_name
         date birth_date
-        string birth_place "nullable"
-        string education "nullable"
-        string profession "nullable"
-        string voivodeship "nullable"
-        string district_name
-        string inactivity_cause "nullable"
-        string inactivity_description "nullable"
+        str birth_place
     }
 
-    Term ||--o{ Sitting : "contains"
-    Term ||--o{ MpInTerm : "has"
-    Term ||--o{ PartyInTerm : "has"
-    Sitting ||--o{ Voting : "contains"
+    MpToTermLink {
+        str id PK
+        str mp_id FK
+        str term_id FK
+        int in_term_id
+        bool active
+        str club
+        int district_num
+        int number_of_votes
+        str email
+        str education
+        str profession
+        str voivodeship
+        str district_name
+        str inactivity_cause
+        str inactivity_description
+    }
+
+    Term ||--o{ Sitting : "has"
+    Term ||--o{ Club : "has"
+    Term ||--o{ MpToTermLink : "has"
+    Sitting ||--o{ SittingDay : "has"
+    Sitting ||--o{ Voting : "has"
     Voting ||--o{ VotingOption : "has"
-    VotingOption ||--o{ Vote : "receives"
-    MpInTerm ||--o{ Vote : "casts"
-    PartyInTerm ||--o{ Vote : "in"
+    VotingOption ||--o{ VoteRecord : "has"
+    Mp ||--o{ MpToTermLink : "has"
 ```
 
-## Installation & usage
+## Getting started
 
-### Scraping
+### Requirements
 
-#### 0. Requirements for scraping
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/)
 
-- git
-- Python 3.12 or uv or devenv
-
-#### 1. Clone and navigate into the repository
+### Install
 
 ```console
-git clone https://github.com/LuxF3rre/sejm_scraper && cd sejm_scraper
-```
-
-#### 2. Install dependencies
-
-```console
-pip install -r requirements.txt
-```
-
-If you have uv:
-
-```console
+git clone https://github.com/LuxF3rre/sejm_scraper
+cd sejm_scraper
 uv sync
 ```
 
-If you have devenv, allow direnv:
+For development dependencies:
 
 ```console
-direnv allow
+uv sync --all-groups
 ```
 
-#### 3. Prepare the database
+### Scrape
+
+Create the database and start scraping:
 
 ```console
-sejm-scraper prepare-database
+uv run sejm-scraper prepare-database
+uv run sejm-scraper scrape
 ```
 
-#### 4. Start scraping
+Or start from a specific point:
 
 ```console
-sejm-scraper start-pipeline
+uv run sejm-scraper scrape --from-term 10
+uv run sejm-scraper scrape --from-term 10 --from-sitting 5
+uv run sejm-scraper scrape --from-term 10 --from-sitting 5 --from-voting 3
 ```
 
-#### 5. Resume scraping
+### Resume
 
-##### From the latest available point in the database
+Pick up where you left off:
 
 ```console
-sejm-scraper resume-pipeline
+uv run sejm-scraper resume
 ```
 
-##### From a specific point
+### Help
 
 ```console
-sejm-scraper resume-pipeline --term <number> [--sitting <number> [--voting <number>]]
+uv run sejm-scraper --help
 ```
 
-#### 6. See help, if needed
+## Accessing the data
+
+### Prerequisites
+
+- [DuckDB CLI](https://duckdb.org/docs/installation/)
+
+### Open the database
 
 ```console
-sejm-scraper --help
+duckdb sejm_scraper.duckdb
 ```
 
-### Accessing the data
+### Query the data
 
-#### 0. Requirements for accessing the data
-
-- duckdb
-
-#### 1. Launch duckdb and open the database
-
-```console
-duckdb
-.open sejm_scraper.duckdb
-```
-
-#### 2. Query the data
-
-You may now query it, for example to see the number of sittings per term:
+For example, to see the number of sittings per term:
 
 ```sql
 SELECT
@@ -209,64 +249,75 @@ GROUP BY
   terms.number;
 ```
 
+## API quirks
+
+The Sejm API has a number of undocumented quirks that this scraper works around. Documented here so you don't have to discover them the hard way.
+
+### Missing data per term
+
+Not all terms have the same data. Term 1 isn't even listed, and term 2 is a ghost — the API acknowledges it exists but returns nothing.
+
+| Term | MPs | Proceedings | Voting table | Votings/Votes |
+|------|-----|-------------|--------------|---------------|
+| 1 | Not listed | - | - | - |
+| 2 | Empty | Empty | Empty | - |
+| 3-6 | Yes | Empty | Yes | Yes |
+| 7+ | Yes | Yes | Yes | Yes |
+
+### No proceedings for terms 3-6
+
+The proceedings endpoint (`/term{N}/proceedings`) returns `[]` for terms 3-6, but voting data does exist at `/term{N}/votings/{sitting}`. The scraper discovers sittings from the `/term{N}/votings` flat table (which maps dates to proceeding numbers) and creates synthetic `Sitting`/`SittingDay` records. The trade-off: sitting titles are generic (`"Posiedzenie nr {N}"`) instead of official names.
+
+### Duplicate voting numbers within a sitting
+
+Some sittings in older terms have multiple votings with the same `votingNumber` but different `sittingDay`, `date`, and `kind` values. For example, term 3, sitting 15 has two completely different votings both numbered 7 — one is an ON_LIST vote, the other is ELECTRONIC. The detail endpoint only returns one of them, so the scraper reconciles voting options per `database.Voting` individually to keep foreign keys consistent.
+
+### List and detail endpoints disagree on voting options
+
+For some votings, the list endpoint says `votingOptions: null`, but when you fetch the detail endpoint, the individual votes have `listVotes` (multi-option structure). The scraper always builds voting options from the detail endpoint in addition to the list endpoint, using `INSERT OR REPLACE` to merge them.
+
+### Undocumented vote values in older terms
+
+Older terms use vote values not present in newer terms and not documented in the API schema:
+
+- `NO_VOTE` (terms 3-5) — MP was present but did not cast a vote.
+- `VOTE_INVALID` — MP's vote was invalidated.
+
+### Single-option and multi-option votings are mixed
+
+The API uses two different structures for vote data depending on the voting kind. In single-option votings (e.g. `ELECTRONIC`), each MP's `vote` field is one of `YES`, `NO`, `ABSTAIN`, `ABSENT`, etc., and `listVotes` is `null`. In multi-option votings (e.g. `ON_LIST`), `vote` is `VOTE_VALID` and the actual per-option votes live in `listVotes` — a dict mapping option indices to vote values. There's no flag that tells you which structure to expect; you have to check whether `listVotes` is present. The scraper normalizes both cases into the same `VotingOption`/`VoteRecord` schema — single-option votings get a synthetic default option with index 1.
+
+### MP inactivity fields are inconsistent
+
+Active MPs have both `inactiveCause` and `waiverDesc` set to `null`. For inactive MPs, you'd expect both fields to be present — but sometimes only `waiverDesc` (mapped to `inactivity_description`) is set while `inactiveCause` is `null`. The two fields don't have a documented relationship, and you can't rely on one implying the other.
+
+### Club IDs may not match the clubs endpoint
+
+The `club` field on MPs and the `club` field on individual votes reference a club ID (e.g. `"KO"`, `"PiS"`). The `/term{N}/clubs` endpoint lists clubs for each term, but some club IDs that appear in vote or MP data may not have a corresponding entry in the clubs endpoint — especially in older terms. The scraper stores clubs as a best-effort reference table without foreign key constraints from votes or MPs.
+
+### Planned sittings have number 0
+
+The proceedings endpoint sometimes returns sittings with `number: 0`. These represent planned (future) sittings that haven't happened yet and have no associated votings. The scraper filters these out automatically, since they contain no useful data and would pollute the sitting table.
+
+### MPs are per-term entities
+
+The API gives each MP a term-scoped `id`. Serve three terms, get three different IDs. This scraper creates a global `Mp` record keyed by name and birth info, but see the [deduplication note](#a-note-on-mp-deduplication) above.
+
 ## Limitations
 
-### Data
+1. Terms 1 and 2 have no usable data in the API. There's no workaround.
+1. Sitting titles for terms 3-6 are synthetic — the API doesn't provide the real ones.
+1. The API doesn't track when MPs became active/inactive or switched parties.
 
-The Sejm API models MPs and parties on a term-by-term basis rather than maintaining a continuous, global entities. Turning them into continuous entities is not a trival issue due to various inconsistencies originating from the Sejm API, including:
+## References
 
-- Data entry errors, such as typos or inconsistent naming of birthplaces.
-- Changes in an MP's last name, commonly due to marriage.
-- Previously missing fields that have been added later and are integral to make a primary key, like birthplace.
-
-### Scope
-
-The scope is constrained by the data availability from the Sejm API:
-
-1. Absence of MP data for term 2.
-2. Limited to only term and MP data for terms 3 through 7 and votes data from term 8 onwards.
-3. Lack of temporal tracking, resulting for example in the absence of exact dates of becoming active or inactive for MPs as well as changing the party.
-
-To address the first two gaps, future development efforts should aim to source the missing data directly from the Sejm's official website. The data is not exposed directly on the webpage, but can be obtained by using the following URL pattern:
-
-`https://sejm.gov.pl/sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji={term_number}&NrPosiedzenia={sitting_number}&NrGlosowania={voting_number}`
-
-For example:
-
-`https://sejm.gov.pl/sejm10.nsf/agent.xsp?symbol=glosowania&NrKadencji=3&NrPosiedzenia=6&NrGlosowania=2`
-
-To address the third gap, future development should focus on implementing a data warehouse that would track temporal changes with scheduled loads and schema capturing changes in time, e.g. [Data Vault 2.0](https://en.wikipedia.org/wiki/Data_vault_modeling).
-
-## Developing
-
-To develop, ensure you have [devenv](https://devenv.sh/) installed.
-
-Then, clone and enter the repository.
-
-```console
-git clone https://github.com/LuxF3rre/sejm_scraper && cd sejm_scraper
-```
-
-And allow direnv to install all required development dependencies.
-
-```console
-direnv allow
-```
+- [ELI & Sejm API documentation](https://api.sejm.gov.pl/)
+- [API for Polish Sejm Swagger UI](https://api.sejm.gov.pl/sejm/openapi/ui)
+- [Sejm VIII Kadencji](https://github.com/prokulski/sejm_viii_kadencji/) — similar project
 
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## References
-
-Sejm API:
-
-- [ELI & Sejm API documentation](https://api.sejm.gov.pl/)
-- [API for Polish Sejm Swagger UI](https://api.sejm.gov.pl/sejm/openapi/ui)
-
-Similar projects:
-
-- [Sejm VIII Kadencji](https://github.com/prokulski/sejm_viii_kadencji/)
 
 ## License
 
