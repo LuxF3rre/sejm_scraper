@@ -3,7 +3,7 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/badge/type%20checker-ty-blue.svg)](https://github.com/astral-sh/ty)
-[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/python.yml)
+[![Build](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml/badge.svg)](https://github.com/LuxF3rre/sejm_scraper/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/LuxF3rre/sejm_scraper/branch/main/graph/badge.svg)](https://codecov.io/gh/LuxF3rre/repo-sejm_scraper)
 
 ## What is this?
