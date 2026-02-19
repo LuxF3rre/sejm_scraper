@@ -29,4 +29,9 @@ jobs:
         run: uv run ty check src/ tests/
 
       - name: Test with pytest
-        run: uv run pytest -v --cov --cov-branch --cov-fail-under=90
+        run: uv run pytest -v --cov --cov-branch --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
