@@ -1,6 +1,8 @@
 import httpx
+import pydantic
 import pytest
 import respx
+import tenacity
 
 from sejm_scraper import api_client, api_schemas
 
@@ -19,6 +21,17 @@ from .conftest import (
 @pytest.fixture(autouse=True)
 def _patch_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(api_client, "BASE_URL", MOCK_BASE_URL)
+
+
+@pytest.fixture
+def _no_retry_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable exponential backoff so retry tests run instantly."""
+    monkeypatch.setattr(
+        api_client._fetch_list.retry, "wait", tenacity.wait_none()
+    )
+    monkeypatch.setattr(
+        api_client.fetch_votes.retry, "wait", tenacity.wait_none()
+    )
 
 
 @pytest.mark.anyio
@@ -115,3 +128,59 @@ async def test_fetch_mps() -> None:
     assert len(mps) == 1
     assert mps[0].first_name == "Andrzej"
     assert mps[0].last_name == "Adamczyk"
+
+
+@pytest.mark.anyio
+@respx.mock
+async def test_fetch_does_not_retry_client_errors() -> None:
+    route = respx.get(f"{MOCK_BASE_URL}/term").mock(
+        return_value=httpx.Response(404)
+    )
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await api_client.fetch_terms(client=client)
+
+    assert route.call_count == 1
+
+
+@pytest.mark.anyio
+@respx.mock
+async def test_fetch_does_not_retry_validation_errors() -> None:
+    route = respx.get(f"{MOCK_BASE_URL}/term").mock(
+        return_value=httpx.Response(200, json=[{"unexpected": "shape"}])
+    )
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(pydantic.ValidationError):
+            await api_client.fetch_terms(client=client)
+
+    assert route.call_count == 1
+
+
+@pytest.mark.anyio
+@respx.mock
+@pytest.mark.usefixtures("_no_retry_wait")
+async def test_fetch_retries_server_errors() -> None:
+    route = respx.get(f"{MOCK_BASE_URL}/term").mock(
+        return_value=httpx.Response(500)
+    )
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await api_client.fetch_terms(client=client)
+
+    assert route.call_count == 3
+
+
+@pytest.mark.anyio
+@respx.mock
+@pytest.mark.usefixtures("_no_retry_wait")
+async def test_fetch_retries_transport_errors() -> None:
+    route = respx.get(f"{MOCK_BASE_URL}/term10/votings/39/205").mock(
+        side_effect=httpx.ConnectError("connection refused")
+    )
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(httpx.ConnectError):
+            await api_client.fetch_votes(
+                client=client, term=10, sitting=39, voting=205
+            )
+
+    assert route.call_count == 3

@@ -204,6 +204,45 @@ async def test_pipeline_falls_back_to_discover_sittings(
 
 
 @pytest.mark.anyio
+@pytest.mark.usefixtures("_mock_scrape")
+async def test_pipeline_passes_mp_link_ids_to_scrape_votes(
+    engine: "Engine",
+) -> None:
+    await pipeline.pipeline(engine=engine)
+
+    scrape.scrape_votes.assert_called_once()  # type: ignore[union-attr]
+    call_kwargs = scrape.scrape_votes.call_args.kwargs  # type: ignore[union-attr]
+    assert call_kwargs["mp_link_ids"] == {}
+
+
+@pytest.mark.anyio
+@pytest.mark.usefixtures("_mock_scrape")
+async def test_pipeline_crash_during_votes_commits_no_votings(
+    monkeypatch: pytest.MonkeyPatch,
+    engine: "Engine",
+) -> None:
+    """A failure while scraping votes must not leave the sitting's
+    votings committed — otherwise resume would treat the sitting as
+    complete and skip its votes."""
+    monkeypatch.setattr(
+        scrape,
+        "scrape_votes",
+        AsyncMock(side_effect=RuntimeError("simulated crash")),
+    )
+
+    with pytest.raises(ExceptionGroup):
+        await pipeline.pipeline(engine=engine)
+
+    with sqlmodel.Session(engine) as session:
+        # The sitting was committed when processing started...
+        sittings = session.exec(sqlmodel.select(database.Sitting)).all()
+        assert len(sittings) == 1
+        # ...but no votings: resume restarts from this sitting.
+        votings = session.exec(sqlmodel.select(database.Voting)).all()
+        assert len(votings) == 0
+
+
+@pytest.mark.anyio
 async def test_resume_pipeline_cold_start(
     monkeypatch: pytest.MonkeyPatch,
     engine: "Engine",

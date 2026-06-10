@@ -46,8 +46,8 @@ Full project documentation is available at [DeepWiki](https://deepwiki.com/LuxF3
 ## Features
 
 - Normalized data model with primary keys, foreign keys, and not-null constraints.
-- Async HTTP with unlimited concurrent vote scraping per sitting.
-- Retry logic for flaky API responses.
+- Async HTTP with bounded concurrent vote scraping (10 requests at a time).
+- Retry logic for transient API failures (timeouts, connection errors, 429/5xx).
 - Embedded DuckDB — no database server needed.
 - Resume from any term, sitting, or voting.
 
@@ -122,6 +122,7 @@ erDiagram
     VoteRecord {
         str id PK
         str voting_option_id FK
+        str mp_to_term_link_id FK
         int mp_term_id
         str vote
         str party
@@ -173,6 +174,7 @@ erDiagram
     Voting ||--o{ VotingOption : "has"
     VotingOption ||--o{ VoteRecord : "has"
     Mp ||--o{ MpToTermLink : "has"
+    MpToTermLink ||--o{ VoteRecord : "casts"
 ```
 
 ## Getting started
@@ -211,6 +213,12 @@ Or start from a specific point:
 uv run sejm-scraper scrape --from-term 10
 uv run sejm-scraper scrape --from-term 10 --from-sitting 5
 uv run sejm-scraper scrape --from-term 10 --from-sitting 5 --from-voting 3
+```
+
+All commands accept `--db-path` to use a database file other than the default `sejm_scraper.duckdb`:
+
+```console
+uv run sejm-scraper scrape --db-path my_data.duckdb
 ```
 
 ### Resume

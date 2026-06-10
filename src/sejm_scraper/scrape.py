@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import groupby
 from operator import attrgetter
@@ -376,6 +377,7 @@ async def scrape_votes(
     term: database.Term,
     sitting: database.Sitting,
     voting: database.Voting,
+    mp_link_ids: Mapping[int, str] | None = None,
 ) -> ScrapedVotesResult:
     """Scrape individual MP votes for a specific voting.
 
@@ -389,6 +391,9 @@ async def scrape_votes(
         term: Term database model.
         sitting: Sitting database model.
         voting: Voting database model to scrape votes for.
+        mp_link_ids: Mapping of the MP's term-scoped id to the
+            MpToTermLink natural key, used to link each vote record
+            directly to the MP's term entry.
 
     Returns:
         Scraped vote records and voting options from the detail endpoint.
@@ -397,6 +402,7 @@ async def scrape_votes(
         ValueError: If vote data is inconsistent (VOTE_VALID without
             multiple option votes).
     """
+    link_ids: Mapping[int, str] = mp_link_ids if mp_link_ids is not None else {}
     voting_with_votes = await api_client.fetch_votes(
         client=client,
         term=term.number,
@@ -471,6 +477,7 @@ async def scrape_votes(
                         voting=voting,
                         voting_option_index=api_schemas.OptionIndex(1),
                     ),
+                    mp_to_term_link_id=link_ids.get(vote.mp_term_id),
                     mp_term_id=vote.mp_term_id,
                     vote=vote.vote,
                     party=vote.party,
@@ -494,6 +501,7 @@ async def scrape_votes(
                             voting=voting,
                             voting_option_index=voting_option,
                         ),
+                        mp_to_term_link_id=link_ids.get(vote.mp_term_id),
                         mp_term_id=vote.mp_term_id,
                         vote=inner_vote,
                         party=vote.party,

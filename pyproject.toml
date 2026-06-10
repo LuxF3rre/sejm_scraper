@@ -85,8 +85,6 @@ lint.ignore = [
     "PLR0912",
     "PLR0913",
     "PLR0915",
-    "D211",    # no-blank-line-before-class
-    "D213",    # multi-line-summary-second-line
     "ISC001",  # single-line-implicit-string-concatenation
     "UP007",   # keep Union syntax for pydantic
 ]

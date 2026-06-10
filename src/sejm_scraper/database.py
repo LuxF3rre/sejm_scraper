@@ -1,6 +1,3 @@
-import json
-import os
-import tempfile
 from collections.abc import Sequence
 from datetime import date
 from typing import Union
@@ -100,6 +97,11 @@ class Mp(SQLModel, table=True):
 class VoteRecord(SQLModel, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
+    # Nullable because a vote may reference an MP missing from the
+    # term's MP list (the API is not consistent about this).
+    mp_to_term_link_id: Union[str, None] = Field(
+        default=None, foreign_key="mptotermlink.id"
+    )
     mp_term_id: int
     vote: Vote
     party: Union[str, None]
@@ -129,15 +131,15 @@ def bulk_upsert(
     model: type[SQLModel],
     records: Sequence[SQLModel],
 ) -> None:
-    """Bulk upsert records using DuckDB's vectorized INSERT OR REPLACE.
+    """Bulk upsert records using DuckDB's INSERT OR REPLACE.
 
     SQLAlchemy's ORM `session.merge()` / `session.add()` issues one
-    INSERT per row, which is extremely slow for the thousands of vote
-    records per sitting. This function bypasses that path entirely by
-    serialising records to a JSON temp file and loading them in a single
-    `INSERT OR REPLACE ... SELECT FROM read_json_auto(...)` statement,
-    letting DuckDB handle the bulk load with its vectorized execution
-    engine.
+    INSERT per row through the full ORM machinery, which is extremely
+    slow for the thousands of vote records per sitting. This function
+    bypasses that path by executing a single prepared
+    `INSERT OR REPLACE` statement over all rows with `executemany` on
+    the native DuckDB connection. Parameter binding also avoids the
+    type-inference pitfalls of file-based loading (`read_json_auto`).
 
     Args:
         session: Active SQLModel session.
@@ -149,40 +151,19 @@ def bulk_upsert(
     table = model.__table__  # type: ignore[attr-defined]  # SQLModel tables have __table__ at runtime
     columns = [col.name for col in table.columns]
     col_names = ", ".join(columns)
+    placeholders = ", ".join(["?"] * len(columns))
 
-    rows = [
-        {col: _json_safe(getattr(r, col)) for col in columns} for r in records
-    ]
+    rows = [[getattr(r, col) for col in columns] for r in records]
 
     # duckdb-engine's ConnectionWrapper proxies attribute access to
-    # the raw DuckDBPyConnection via __getattr__, so .execute()
+    # the raw DuckDBPyConnection via __getattr__, so .executemany()
     # works directly against the native DuckDB connection.
     dbapi_conn = session.connection().connection.dbapi_connection
-
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix=".json",
-        delete=False,
-        encoding="utf-8",
-    ) as f:
-        json.dump(rows, f)
-        tmp_path = f.name
-
-    try:
-        path = tmp_path.replace("\\", "/")
-        dbapi_conn.execute(  # type: ignore[union-attr]  # guaranteed non-None inside active session
-            f"INSERT OR REPLACE INTO {table.name} ({col_names}) "  # noqa: S608
-            f"SELECT {col_names} FROM read_json_auto('{path}')"
-        )
-    finally:
-        os.unlink(tmp_path)
-
-
-def _json_safe(value: object) -> object:
-    """Convert values that `json.dump` cannot serialise natively."""
-    if isinstance(value, date):
-        return value.isoformat()
-    return value
+    dbapi_conn.executemany(  # type: ignore[union-attr]  # guaranteed non-None inside active session
+        f"INSERT OR REPLACE INTO {table.name} ({col_names}) "  # noqa: S608
+        f"VALUES ({placeholders})",
+        rows,
+    )
 
 
 def create_db_and_tables(*, engine: Engine | None = None) -> None:
