@@ -10,6 +10,22 @@ if TYPE_CHECKING:
     from sqlalchemy.engine.base import Engine
 
 
+def test_json_safe_date() -> None:
+    assert database._json_safe(date(2025, 1, 15)) == "2025-01-15"
+
+
+def test_json_safe_string() -> None:
+    assert database._json_safe("hello") == "hello"
+
+
+def test_json_safe_none() -> None:
+    assert database._json_safe(None) is None
+
+
+def test_json_safe_int() -> None:
+    assert database._json_safe(42) == 42
+
+
 def test_bulk_upsert_empty_records(engine: "Engine") -> None:
     with sqlmodel.Session(engine) as session:
         database.bulk_upsert(session=session, model=database.Term, records=[])

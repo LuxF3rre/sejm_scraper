@@ -1,9 +1,12 @@
+import json
+import os
+import tempfile
 from collections.abc import Sequence
 from datetime import date
-from typing import Union
+from typing import Any, Union
 
 import sqlmodel
-from sqlalchemy import Engine
+from sqlalchemy import Boolean, Column, Date, Engine, Integer
 from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper.api_schemas import Vote
@@ -131,15 +134,17 @@ def bulk_upsert(
     model: type[SQLModel],
     records: Sequence[SQLModel],
 ) -> None:
-    """Bulk upsert records using DuckDB's INSERT OR REPLACE.
+    """Bulk upsert records using DuckDB's vectorized INSERT OR REPLACE.
 
     SQLAlchemy's ORM `session.merge()` / `session.add()` issues one
-    INSERT per row through the full ORM machinery, which is extremely
-    slow for the thousands of vote records per sitting. This function
-    bypasses that path by executing a single prepared
-    `INSERT OR REPLACE` statement over all rows with `executemany` on
-    the native DuckDB connection. Parameter binding also avoids the
-    type-inference pitfalls of file-based loading (`read_json_auto`).
+    INSERT per row, and DuckDB's `executemany` likewise executes the
+    prepared statement row by row — both are extremely slow for the
+    thousands of vote records per sitting. This function bypasses those
+    paths by serialising records to a JSON temp file and loading them
+    in a single `INSERT OR REPLACE ... SELECT FROM read_json(...)`
+    statement, letting DuckDB handle the bulk load with its vectorized
+    execution engine. Column types are passed to `read_json` explicitly
+    (derived from the table schema), so no type inference is involved.
 
     Args:
         session: Active SQLModel session.
@@ -149,21 +154,59 @@ def bulk_upsert(
     if not records:
         return
     table = model.__table__  # type: ignore[attr-defined]  # SQLModel tables have __table__ at runtime
-    columns = [col.name for col in table.columns]
-    col_names = ", ".join(columns)
-    placeholders = ", ".join(["?"] * len(columns))
+    columns = list(table.columns)
+    col_names = ", ".join(col.name for col in columns)
+    col_types = ", ".join(
+        f"'{col.name}': '{_duckdb_column_type(col)}'" for col in columns
+    )
 
-    rows = [[getattr(r, col) for col in columns] for r in records]
+    rows = [
+        {col.name: _json_safe(getattr(r, col.name)) for col in columns}
+        for r in records
+    ]
 
     # duckdb-engine's ConnectionWrapper proxies attribute access to
-    # the raw DuckDBPyConnection via __getattr__, so .executemany()
+    # the raw DuckDBPyConnection via __getattr__, so .execute()
     # works directly against the native DuckDB connection.
     dbapi_conn = session.connection().connection.dbapi_connection
-    dbapi_conn.executemany(  # type: ignore[union-attr]  # guaranteed non-None inside active session
-        f"INSERT OR REPLACE INTO {table.name} ({col_names}) "  # noqa: S608
-        f"VALUES ({placeholders})",
-        rows,
-    )
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".json",
+        delete=False,
+        encoding="utf-8",
+    ) as f:
+        json.dump(rows, f)
+        tmp_path = f.name
+
+    try:
+        path = tmp_path.replace("\\", "/")
+        dbapi_conn.execute(  # type: ignore[union-attr]  # guaranteed non-None inside active session
+            f"INSERT OR REPLACE INTO {table.name} ({col_names}) "  # noqa: S608
+            f"SELECT {col_names} FROM read_json('{path}', "
+            f"format='array', columns={{{col_types}}})"
+        )
+    finally:
+        os.unlink(tmp_path)
+
+
+def _duckdb_column_type(column: "Column[Any]") -> str:
+    """Map a SQLAlchemy column type to an explicit DuckDB type."""
+    if isinstance(column.type, Boolean):
+        return "BOOLEAN"
+    if isinstance(column.type, Integer):
+        return "BIGINT"
+    if isinstance(column.type, Date):
+        return "DATE"
+    # Strings and string-backed enums
+    return "VARCHAR"
+
+
+def _json_safe(value: object) -> object:
+    """Convert values that `json.dump` cannot serialise natively."""
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
 
 
 def create_db_and_tables(*, engine: Engine | None = None) -> None:
