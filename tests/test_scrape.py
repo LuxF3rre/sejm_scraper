@@ -288,8 +288,32 @@ async def test_scrape_votes_single_option(
     assert len(result.votes) == 1
     assert result.votes[0].vote == api_schemas.Vote.NO
     assert result.votes[0].party == "PiS"
+    # No MP link mapping provided
+    assert result.votes[0].mp_to_term_link_id is None
     # Default voting option created
     assert len(result.voting_options) == 1
+
+
+@pytest.mark.anyio
+@respx.mock
+async def test_scrape_votes_links_mp_to_term(
+    term: database.Term,
+    sitting: database.Sitting,
+    voting: database.Voting,
+) -> None:
+    respx.get(f"{MOCK_BASE_URL}/term10/votings/39/205").mock(
+        return_value=httpx.Response(200, json=VOTE_DETAIL_RESPONSE)
+    )
+    async with httpx.AsyncClient() as client:
+        result = await scrape.scrape_votes(
+            client=client,
+            term=term,
+            sitting=sitting,
+            voting=voting,
+            mp_link_ids={1: "mp-link-key-1"},
+        )
+
+    assert result.votes[0].mp_to_term_link_id == "mp-link-key-1"
 
 
 @pytest.mark.anyio

@@ -1,12 +1,39 @@
 import httpx
 from pydantic import BaseModel
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from sejm_scraper import api_schemas
+
+_HTTP_TOO_MANY_REQUESTS = 429
+_HTTP_INTERNAL_SERVER_ERROR = 500
+
+
+def _is_retryable_error(exception: BaseException) -> bool:
+    """Return True for transient failures that are worth retrying.
+
+    Retries transport-level errors (timeouts, connection failures) and
+    HTTP 429/5xx responses. Other client errors (4xx) and response
+    validation errors are not retried, as repeating the request cannot
+    fix them.
+    """
+    if isinstance(exception, httpx.HTTPStatusError):
+        status_code = exception.response.status_code
+        return (
+            status_code == _HTTP_TOO_MANY_REQUESTS
+            or status_code >= _HTTP_INTERNAL_SERVER_ERROR
+        )
+    return isinstance(exception, httpx.TransportError)
+
 
 RETRY_SETTINGS = {
     "stop": stop_after_attempt(3),
     "wait": wait_exponential(multiplier=1, min=4, max=30),
+    "retry": retry_if_exception(_is_retryable_error),
     "reraise": True,
 }
 BASE_URL = "https://api.sejm.gov.pl/sejm"
