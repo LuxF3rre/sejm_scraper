@@ -34,5 +34,9 @@ def configure_logging(*, log_format: LogFormat = LogFormat.CONSOLE) -> None:
             renderer,
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
-        cache_logger_on_first_use=True,
+        # Do not cache bound loggers: loggers obtained via get_logger()
+        # rebind on every call, so calling configure_logging() always takes
+        # effect immediately regardless of when it runs relative to the
+        # first log call. The log volume here makes caching irrelevant.
+        cache_logger_on_first_use=False,
     )
