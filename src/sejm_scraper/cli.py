@@ -22,6 +22,17 @@ def _engine_from_path(db_path: str) -> Engine:
     return database.get_engine(url=f"duckdb:///{db_path}")
 
 
+@app.callback()
+def main(
+    *,
+    log_format: logging_config.LogFormat = typer.Option(
+        _DEFAULT_LOG_FORMAT, help=_LOG_FORMAT_HELP
+    ),
+) -> None:
+    """Scrape Polish Sejm parliamentary data."""
+    logging_config.configure_logging(log_format=log_format)
+
+
 @app.command()
 def prepare_database(
     *,
@@ -48,12 +59,8 @@ def scrape(
         ),
     ),
     db_path: str = typer.Option(DEFAULT_DB_PATH, help=_DB_PATH_HELP),
-    log_format: logging_config.LogFormat = typer.Option(
-        _DEFAULT_LOG_FORMAT, help=_LOG_FORMAT_HELP
-    ),
 ) -> None:
     """Run the full scraping pipeline."""
-    logging_config.configure_logging(log_format=log_format)
 
     async def _run() -> None:
         await pipeline.pipeline(
@@ -70,12 +77,8 @@ def scrape(
 def resume(
     *,
     db_path: str = typer.Option(DEFAULT_DB_PATH, help=_DB_PATH_HELP),
-    log_format: logging_config.LogFormat = typer.Option(
-        _DEFAULT_LOG_FORMAT, help=_LOG_FORMAT_HELP
-    ),
 ) -> None:
     """Resume scraping from the last completed point in the database."""
-    logging_config.configure_logging(log_format=log_format)
 
     async def _run() -> None:
         await pipeline.resume_pipeline(engine=_engine_from_path(db_path))

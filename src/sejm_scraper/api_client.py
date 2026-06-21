@@ -28,7 +28,6 @@ def _is_retryable_error(exception: Exception) -> bool:
 _retry = stamina.retry(
     on=_is_retryable_error,
     attempts=3,
-    timeout=None,
     wait_initial=4,
     wait_max=30,
 )
