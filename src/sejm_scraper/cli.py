@@ -4,13 +4,18 @@ import anyio
 import typer
 from sqlalchemy import Engine
 
-from sejm_scraper import database, pipeline
+from sejm_scraper import database, logging_config, pipeline
 
 app = typer.Typer(help="Scrape Polish Sejm parliamentary data.")
 
 DEFAULT_DB_PATH = "sejm_scraper.duckdb"
 
 _DB_PATH_HELP = "Path to the DuckDB database file."
+_LOG_FORMAT_HELP = (
+    "Log output format: 'console' for human-readable output or "
+    "'json' for one JSON object per line."
+)
+_DEFAULT_LOG_FORMAT = logging_config.LogFormat.CONSOLE
 
 
 def _engine_from_path(db_path: str) -> Engine:
@@ -43,8 +48,12 @@ def scrape(
         ),
     ),
     db_path: str = typer.Option(DEFAULT_DB_PATH, help=_DB_PATH_HELP),
+    log_format: logging_config.LogFormat = typer.Option(
+        _DEFAULT_LOG_FORMAT, help=_LOG_FORMAT_HELP
+    ),
 ) -> None:
     """Run the full scraping pipeline."""
+    logging_config.configure_logging(log_format=log_format)
 
     async def _run() -> None:
         await pipeline.pipeline(
@@ -61,8 +70,12 @@ def scrape(
 def resume(
     *,
     db_path: str = typer.Option(DEFAULT_DB_PATH, help=_DB_PATH_HELP),
+    log_format: logging_config.LogFormat = typer.Option(
+        _DEFAULT_LOG_FORMAT, help=_LOG_FORMAT_HELP
+    ),
 ) -> None:
     """Resume scraping from the last completed point in the database."""
+    logging_config.configure_logging(log_format=log_format)
 
     async def _run() -> None:
         await pipeline.resume_pipeline(engine=_engine_from_path(db_path))

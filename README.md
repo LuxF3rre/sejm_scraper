@@ -221,6 +221,12 @@ All commands accept `--db-path` to use a database file other than the default `s
 uv run sejm-scraper scrape --db-path my_data.duckdb
 ```
 
+The `scrape` and `resume` commands accept `--log-format` to control log output. The default `console` format is human-readable; `json` emits one JSON object per line, which is handy for unattended runs and log aggregation:
+
+```console
+uv run sejm-scraper scrape --log-format json
+```
+
 ### Resume
 
 Pick up where you left off:

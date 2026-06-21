@@ -93,6 +93,10 @@ lint.unfixable = []
 [tool.ruff.lint.isort]
 known-first-party = ["sejm_scraper"]
 
+[tool.ruff.lint.flake8-bugbear]
+# typer.Option is the idiomatic way to declare CLI option defaults.
+extend-immutable-calls = ["typer.Option"]
+
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
