@@ -4,6 +4,7 @@ __all__ = [
     "cli",
     "database",
     "database_key_utils",
+    "logging_config",
     "pipeline",
     "scrape",
 ]
