@@ -39,3 +39,26 @@ def test_console_log_format_is_not_json(
     assert "scraped terms" in out
     with pytest.raises(json.JSONDecodeError):
         json.loads(out)
+
+
+def test_reconfiguring_applies_to_existing_loggers(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A logger bound before reconfiguration must pick up the new format.
+
+    Guards against re-enabling logger caching, which would freeze the
+    format chosen at the first log call.
+    """
+    logging_config.configure_logging(
+        log_format=logging_config.LogFormat.CONSOLE
+    )
+    logger = structlog.get_logger()
+    logger.info("before reconfigure")
+
+    logging_config.configure_logging(log_format=logging_config.LogFormat.JSON)
+    logger.info("after reconfigure", count=1)
+
+    last_line = capsys.readouterr().out.strip().splitlines()[-1]
+    record = json.loads(last_line)
+    assert record["event"] == "after reconfigure"
+    assert record["count"] == 1
