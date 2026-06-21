@@ -1,11 +1,6 @@
 import httpx
+import stamina
 from pydantic import BaseModel
-from tenacity import (
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from sejm_scraper import api_schemas
 
@@ -13,7 +8,7 @@ _HTTP_TOO_MANY_REQUESTS = 429
 _HTTP_INTERNAL_SERVER_ERROR = 500
 
 
-def _is_retryable_error(exception: BaseException) -> bool:
+def _is_retryable_error(exception: Exception) -> bool:
     """Return True for transient failures that are worth retrying.
 
     Retries transport-level errors (timeouts, connection failures) and
@@ -30,17 +25,18 @@ def _is_retryable_error(exception: BaseException) -> bool:
     return isinstance(exception, httpx.TransportError)
 
 
-RETRY_SETTINGS = {
-    "stop": stop_after_attempt(3),
-    "wait": wait_exponential(multiplier=1, min=4, max=30),
-    "retry": retry_if_exception(_is_retryable_error),
-    "reraise": True,
-}
+_retry = stamina.retry(
+    on=_is_retryable_error,
+    attempts=3,
+    timeout=None,
+    wait_initial=4,
+    wait_max=30,
+)
 BASE_URL = "https://api.sejm.gov.pl/sejm"
 TIMEOUT = 30
 
 
-@retry(**RETRY_SETTINGS)  # ty: ignore[no-matching-overload]
+@_retry
 async def fetch_votes(
     *,
     client: httpx.AsyncClient,
@@ -67,7 +63,7 @@ async def fetch_votes(
     return api_schemas.VotingWithMpVotesSchema(**response.json())
 
 
-@retry(**RETRY_SETTINGS)  # ty: ignore[no-matching-overload]
+@_retry
 async def _fetch_list[T: BaseModel](
     *,
     client: httpx.AsyncClient,
