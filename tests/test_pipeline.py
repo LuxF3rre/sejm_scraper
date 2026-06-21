@@ -116,8 +116,8 @@ async def test_pipeline_full_flow(engine: "Engine") -> None:
 async def test_pipeline_passes_from_term(engine: "Engine") -> None:
     await pipeline.pipeline(engine=engine, from_term=10)
 
-    scrape.scrape_terms.assert_called_once()  # type: ignore[union-attr]
-    call_kwargs = scrape.scrape_terms.call_args.kwargs  # type: ignore[union-attr]
+    scrape.scrape_terms.assert_called_once()  # ty: ignore[unresolved-attribute]
+    call_kwargs = scrape.scrape_terms.call_args.kwargs  # ty: ignore[unresolved-attribute]
     assert call_kwargs["from_term"] == 10
 
 
@@ -128,8 +128,8 @@ async def test_pipeline_passes_from_sitting_only_for_matching_term(
 ) -> None:
     await pipeline.pipeline(engine=engine, from_term=10, from_sitting=39)
 
-    scrape.scrape_sittings.assert_called_once()  # type: ignore[union-attr]
-    call_kwargs = scrape.scrape_sittings.call_args.kwargs  # type: ignore[union-attr]
+    scrape.scrape_sittings.assert_called_once()  # ty: ignore[unresolved-attribute]
+    call_kwargs = scrape.scrape_sittings.call_args.kwargs  # ty: ignore[unresolved-attribute]
     assert call_kwargs["from_sitting"] == 39
 
 
@@ -196,7 +196,7 @@ async def test_pipeline_falls_back_to_discover_sittings(
 
     await pipeline.pipeline(engine=engine)
 
-    scrape.discover_sittings_from_votings.assert_called_once()  # type: ignore[union-attr]
+    scrape.discover_sittings_from_votings.assert_called_once()  # ty: ignore[unresolved-attribute]
 
     with sqlmodel.Session(engine) as session:
         sittings = session.exec(sqlmodel.select(database.Sitting)).all()
@@ -210,8 +210,8 @@ async def test_pipeline_passes_mp_link_ids_to_scrape_votes(
 ) -> None:
     await pipeline.pipeline(engine=engine)
 
-    scrape.scrape_votes.assert_called_once()  # type: ignore[union-attr]
-    call_kwargs = scrape.scrape_votes.call_args.kwargs  # type: ignore[union-attr]
+    scrape.scrape_votes.assert_called_once()  # ty: ignore[unresolved-attribute]
+    call_kwargs = scrape.scrape_votes.call_args.kwargs  # ty: ignore[unresolved-attribute]
     assert call_kwargs["mp_link_ids"] == {}
 
 
