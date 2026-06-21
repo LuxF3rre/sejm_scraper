@@ -1,6 +1,6 @@
 [[repos]]
 repo = "https://github.com/pre-commit/pre-commit-hooks"
-rev = "v5.0.0"
+rev = "v6.0.0"
 hooks = [
   { id = "check-yaml" },
   { id = "check-toml" },
@@ -12,7 +12,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.15.1"
+rev = "v0.15.18"
 hooks = [
   { id = "ruff-check", args = ["--fix"] },
   { id = "ruff-format" },
@@ -20,9 +20,10 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/igorshubovych/markdownlint-cli"
-rev = "v0.44.0"
+rev = "v0.49.0"
 hooks = [
-  { id = "markdownlint" },
+  # Exclude vendored agent-skill docs that this project does not author.
+  { id = "markdownlint", exclude = "^\\.claude/" },
 ]
 
 [[repos]]

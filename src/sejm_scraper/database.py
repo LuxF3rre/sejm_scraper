@@ -153,7 +153,7 @@ def bulk_upsert(
     """
     if not records:
         return
-    table = model.__table__  # type: ignore[attr-defined]  # SQLModel tables have __table__ at runtime
+    table = model.__table__  # ty: ignore[unresolved-attribute]  # SQLModel tables have __table__ at runtime
     columns = list(table.columns)
     col_names = ", ".join(col.name for col in columns)
     col_types = ", ".join(
@@ -181,7 +181,7 @@ def bulk_upsert(
 
     try:
         path = tmp_path.replace("\\", "/")
-        dbapi_conn.execute(  # type: ignore[union-attr]  # guaranteed non-None inside active session
+        dbapi_conn.execute(  # ty: ignore[unresolved-attribute]  # guaranteed non-None inside active session
             f"INSERT OR REPLACE INTO {table.name} ({col_names}) "  # noqa: S608
             f"SELECT {col_names} FROM read_json('{path}', "
             f"format='array', columns={{{col_types}}})"

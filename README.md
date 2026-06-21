@@ -277,7 +277,7 @@ The Sejm API has a number of undocumented quirks that this scraper works around.
 Not all terms have the same data. Term 1 isn't even listed, and term 2 is a ghost — the API acknowledges it exists but returns nothing.
 
 | Term | MPs | Proceedings | Voting table | Votings/Votes |
-|------|-----|-------------|--------------|---------------|
+| ---- | --- | ----------- | ------------ | ------------- |
 | 1 | Not listed | - | - | - |
 | 2 | Empty | Empty | Empty | - |
 | 3-6 | Yes | Empty | Yes | Yes |
