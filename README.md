@@ -59,8 +59,8 @@ Full project documentation is available at [DeepWiki](https://deepwiki.com/LuxF3
 - **Pydantic v2** — API response validation
 - **httpx** — async HTTP client
 - **anyio** — structured concurrency
-- **tenacity** — retry logic
-- **loguru** — structured logging
+- **stamina** — retry logic
+- **structlog** — structured logging
 - **ruff** — linting and formatting
 - **ty** — type checking
 - **uv** — package management

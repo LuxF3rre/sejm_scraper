@@ -1,10 +1,12 @@
 import anyio
 import httpx
 import sqlmodel
-from loguru import logger
+import structlog
 from sqlalchemy import Engine
 
 from sejm_scraper import database, scrape
+
+logger = structlog.get_logger()
 
 # Cap on simultaneous requests to the Sejm API when scraping votes.
 # The API is a public government service; hammering it with hundreds
@@ -33,8 +35,7 @@ async def _scrape_voting_votes(
     all_votes.extend(result.votes)
     all_detail_options.extend(result.voting_options)
     logger.info(
-        "term {term}, sitting {sitting}, "
-        "voting {voting}: scraped {count} votes",
+        "scraped votes",
         term=term.number,
         sitting=sitting.number,
         voting=voting.number,
@@ -120,7 +121,7 @@ async def _process_sitting(
     )
     database_client.commit()
     logger.info(
-        "term {term}, sitting {sitting}: scraped {count} votings",
+        "scraped votings",
         term=term.number,
         sitting=sitting.number,
         count=len(scraped_votings.votings),
@@ -181,7 +182,7 @@ async def pipeline(
             # Process in ascending order so the highest committed
             # term number is always the last one started.
             terms.sort(key=lambda t: t.number)
-            logger.info("scraped {count} terms", count=len(terms))
+            logger.info("scraped terms", count=len(terms))
 
             for term in terms:
                 database.bulk_upsert(
@@ -207,7 +208,7 @@ async def pipeline(
                 )
                 database_client.commit()
                 logger.info(
-                    "term {term}: scraped {mp_count} mps",
+                    "scraped mps",
                     term=term.number,
                     mp_count=len(scraped_mps.mps),
                 )
@@ -226,7 +227,7 @@ async def pipeline(
                 )
                 database_client.commit()
                 logger.info(
-                    "term {term}: scraped {club_count} clubs",
+                    "scraped clubs",
                     term=term.number,
                     club_count=len(scraped_clubs),
                 )
@@ -250,13 +251,12 @@ async def pipeline(
                     )
                     if scraped_sittings.sittings:
                         logger.info(
-                            "term {term}: discovered {count} sittings "
-                            "from voting table",
+                            "discovered sittings from voting table",
                             term=term.number,
                             count=len(scraped_sittings.sittings),
                         )
                 logger.info(
-                    "term {term}: scraped {count} sittings",
+                    "scraped sittings",
                     term=term.number,
                     count=len(scraped_sittings.sittings),
                 )
@@ -333,11 +333,11 @@ async def resume_pipeline(*, engine: Engine | None = None) -> None:
         logger.info("no existing data found, starting fresh pipeline")
         await pipeline(engine=engine)
     elif from_sitting is None:
-        logger.info("resuming from term {term}", term=from_term)
+        logger.info("resuming pipeline", term=from_term)
         await pipeline(engine=engine, from_term=from_term)
     elif from_voting is None:
         logger.info(
-            "resuming from term {term}, sitting {sitting}",
+            "resuming pipeline",
             term=from_term,
             sitting=from_sitting,
         )
@@ -348,7 +348,7 @@ async def resume_pipeline(*, engine: Engine | None = None) -> None:
         )
     else:
         logger.info(
-            "resuming from term {term}, sitting {sitting}, voting {voting}",
+            "resuming pipeline",
             term=from_term,
             sitting=from_sitting,
             voting=from_voting,

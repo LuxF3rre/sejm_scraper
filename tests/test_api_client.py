@@ -1,8 +1,10 @@
+from collections.abc import Iterator
+
 import httpx
 import pydantic
 import pytest
 import respx
-import tenacity
+import stamina
 
 from sejm_scraper import api_client, api_schemas
 
@@ -24,14 +26,15 @@ def _patch_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def _no_retry_wait(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Disable exponential backoff so retry tests run instantly."""
-    monkeypatch.setattr(
-        api_client._fetch_list.retry, "wait", tenacity.wait_none()
-    )
-    monkeypatch.setattr(
-        api_client.fetch_votes.retry, "wait", tenacity.wait_none()
-    )
+def _no_retry_wait() -> Iterator[None]:
+    """Disable exponential backoff so retry tests run instantly.
+
+    stamina's testing mode removes all waiting between attempts while
+    still honouring the configured number of attempts.
+    """
+    stamina.set_testing(True, attempts=3)
+    yield
+    stamina.set_testing(False)
 
 
 @pytest.mark.anyio
