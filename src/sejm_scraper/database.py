@@ -34,13 +34,15 @@ class LoadedAtMixin(SQLModel):
     """Adds a ``loaded_at`` audit column to a table.
 
     The value is a timezone-aware UTC (Zulu) timestamp recording when the
-    row was last written. It is populated by `bulk_upsert` on every insert
-    and merge, so it stays ``None`` only on rows persisted by other means.
+    row was last written. `bulk_upsert` overrides it on every insert and
+    merge, so the column is never null; the ``default_factory`` only
+    matters for rows constructed and persisted by other means.
     """
 
-    loaded_at: Union[datetime, None] = Field(
-        default=None,
+    loaded_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
         sa_type=DateTime(timezone=True),  # ty: ignore[invalid-argument-type]  # SQLAlchemy type instance accepted at runtime
+        nullable=False,
     )
 
 
