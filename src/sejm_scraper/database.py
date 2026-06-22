@@ -2,16 +2,19 @@ import json
 import os
 import tempfile
 from collections.abc import Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any, Union
 
 import sqlmodel
-from sqlalchemy import Boolean, Column, Date, Engine, Integer
+from sqlalchemy import Boolean, Column, Date, DateTime, Engine, Integer
 from sqlmodel import Field, SQLModel, create_engine
 
 from sejm_scraper.api_schemas import Vote
 
 DEFAULT_DUCKDB_URL = "duckdb:///sejm_scraper.duckdb"
+
+# Name of the audit column stamped with the UTC time of each write.
+LOADED_AT_COLUMN = "loaded_at"
 
 
 def get_engine(*, url: str = DEFAULT_DUCKDB_URL, echo: bool = False) -> Engine:
@@ -27,27 +30,41 @@ def get_engine(*, url: str = DEFAULT_DUCKDB_URL, echo: bool = False) -> Engine:
     return create_engine(url, echo=echo)
 
 
-class Term(SQLModel, table=True):
+class LoadedAtMixin(SQLModel):
+    """Adds a ``loaded_at`` audit column to a table.
+
+    The value is a naive timestamp holding UTC (Zulu) wall-clock time,
+    recording when the row was last written. It is populated by
+    `bulk_upsert` on every insert and merge, so it stays ``None`` only on
+    rows persisted by other means. A naive UTC column is used (rather than
+    a tz-aware one) because reading DuckDB ``TIMESTAMPTZ`` back through
+    duckdb-engine requires the optional ``pytz`` dependency.
+    """
+
+    loaded_at: Union[datetime, None] = Field(default=None)
+
+
+class Term(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     number: int
     from_date: date
     to_date: Union[date, None]
 
 
-class Sitting(SQLModel, table=True):
+class Sitting(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     term_id: str = Field(foreign_key="term.id")
     title: str
     number: int
 
 
-class SittingDay(SQLModel, table=True):
+class SittingDay(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     sitting_id: str = Field(foreign_key="sitting.id")
     date: date
 
 
-class Voting(SQLModel, table=True):
+class Voting(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     sitting_id: str = Field(foreign_key="sitting.id")
     sitting_day: int
@@ -68,7 +85,7 @@ class Voting(SQLModel, table=True):
     against_all: Union[int, None]
 
 
-class VotingOption(SQLModel, table=True):
+class VotingOption(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     voting_id: str = Field(foreign_key="voting.id")
     index: int
@@ -77,7 +94,7 @@ class VotingOption(SQLModel, table=True):
     votes: int
 
 
-class Club(SQLModel, table=True):
+class Club(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     term_id: str = Field(foreign_key="term.id")
     club_id: str
@@ -88,7 +105,7 @@ class Club(SQLModel, table=True):
     members_count: int
 
 
-class Mp(SQLModel, table=True):
+class Mp(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     first_name: str
     second_name: Union[str, None]
@@ -97,7 +114,7 @@ class Mp(SQLModel, table=True):
     birth_place: Union[str, None]
 
 
-class VoteRecord(SQLModel, table=True):
+class VoteRecord(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     voting_option_id: str = Field(foreign_key="votingoption.id")
     # Nullable because a vote may reference an MP missing from the
@@ -110,7 +127,7 @@ class VoteRecord(SQLModel, table=True):
     party: Union[str, None]
 
 
-class MpToTermLink(SQLModel, table=True):
+class MpToTermLink(LoadedAtMixin, table=True):
     id: str = Field(primary_key=True)
     mp_id: str = Field(foreign_key="mp.id")
     term_id: str = Field(foreign_key="term.id")
@@ -160,8 +177,18 @@ def bulk_upsert(
         f"'{col.name}': '{_duckdb_column_type(col)}'" for col in columns
     )
 
+    # Stamp every inserted/merged row with the current UTC (Zulu) time,
+    # overriding whatever the record carries so the column always reflects
+    # the moment of this write. Stored as a naive UTC timestamp (offset
+    # dropped) to match the naive TIMESTAMP column.
+    loaded_at = datetime.now(UTC).replace(tzinfo=None).isoformat()
     rows = [
-        {col.name: _json_safe(getattr(r, col.name)) for col in columns}
+        {
+            col.name: loaded_at
+            if col.name == LOADED_AT_COLUMN
+            else _json_safe(getattr(r, col.name))
+            for col in columns
+        }
         for r in records
     ]
 
@@ -196,6 +223,10 @@ def _duckdb_column_type(column: "Column[Any]") -> str:
         return "BOOLEAN"
     if isinstance(column.type, Integer):
         return "BIGINT"
+    # DateTime must be checked before Date: a datetime serialises to an
+    # ISO timestamp string that DuckDB parses as a (naive, UTC) TIMESTAMP.
+    if isinstance(column.type, DateTime):
+        return "TIMESTAMP"
     if isinstance(column.type, Date):
         return "DATE"
     # Strings and string-backed enums

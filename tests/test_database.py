@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 import sqlmodel
@@ -51,6 +51,59 @@ def test_bulk_upsert_inserts_records(engine: "Engine") -> None:
         assert result is not None
         assert result.id == "abc123"
         assert result.number == 10
+
+
+def test_bulk_upsert_stamps_loaded_at(engine: "Engine") -> None:
+    """Every inserted row gets a naive UTC loaded_at timestamp."""
+    before = datetime.now(UTC).replace(tzinfo=None)
+    term = database.Term(
+        id="abc123",
+        number=10,
+        from_date=date(2023, 11, 13),
+        to_date=None,
+    )
+    with sqlmodel.Session(engine) as session:
+        database.bulk_upsert(
+            session=session,
+            model=database.Term,
+            records=[term],
+        )
+        session.commit()
+    after = datetime.now(UTC).replace(tzinfo=None)
+
+    with sqlmodel.Session(engine) as session:
+        result = session.exec(sqlmodel.select(database.Term)).first()
+        assert result is not None
+        assert result.loaded_at is not None
+        # Stored as naive UTC wall-clock time.
+        assert result.loaded_at.tzinfo is None
+        assert before <= result.loaded_at <= after
+
+
+def test_bulk_upsert_refreshes_loaded_at_on_merge(engine: "Engine") -> None:
+    """Re-upserting a row updates loaded_at, ignoring the record value."""
+    stale = datetime(2000, 1, 1)  # noqa: DTZ001  # naive UTC to match column
+    term = database.Term(
+        id="abc123",
+        number=10,
+        from_date=date(2023, 11, 13),
+        to_date=None,
+        loaded_at=stale,
+    )
+    with sqlmodel.Session(engine) as session:
+        database.bulk_upsert(
+            session=session,
+            model=database.Term,
+            records=[term],
+        )
+        session.commit()
+
+    with sqlmodel.Session(engine) as session:
+        result = session.exec(sqlmodel.select(database.Term)).first()
+        assert result is not None
+        assert result.loaded_at is not None
+        # The stale value carried on the record must be overridden.
+        assert result.loaded_at > stale
 
 
 def test_bulk_upsert_replaces_on_duplicate(engine: "Engine") -> None:
