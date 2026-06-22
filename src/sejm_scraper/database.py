@@ -33,15 +33,15 @@ def get_engine(*, url: str = DEFAULT_DUCKDB_URL, echo: bool = False) -> Engine:
 class LoadedAtMixin(SQLModel):
     """Adds a ``loaded_at`` audit column to a table.
 
-    The value is a naive timestamp holding UTC (Zulu) wall-clock time,
-    recording when the row was last written. It is populated by
-    `bulk_upsert` on every insert and merge, so it stays ``None`` only on
-    rows persisted by other means. A naive UTC column is used (rather than
-    a tz-aware one) because reading DuckDB ``TIMESTAMPTZ`` back through
-    duckdb-engine requires the optional ``pytz`` dependency.
+    The value is a timezone-aware UTC (Zulu) timestamp recording when the
+    row was last written. It is populated by `bulk_upsert` on every insert
+    and merge, so it stays ``None`` only on rows persisted by other means.
     """
 
-    loaded_at: Union[datetime, None] = Field(default=None)
+    loaded_at: Union[datetime, None] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # ty: ignore[invalid-argument-type]  # SQLAlchemy type instance accepted at runtime
+    )
 
 
 class Term(LoadedAtMixin, table=True):
@@ -179,9 +179,9 @@ def bulk_upsert(
 
     # Stamp every inserted/merged row with the current UTC (Zulu) time,
     # overriding whatever the record carries so the column always reflects
-    # the moment of this write. Stored as a naive UTC timestamp (offset
-    # dropped) to match the naive TIMESTAMP column.
-    loaded_at = datetime.now(UTC).replace(tzinfo=None).isoformat()
+    # the moment of this write. The offset-bearing ISO string is parsed by
+    # DuckDB into the tz-aware TIMESTAMPTZ column.
+    loaded_at = datetime.now(UTC).isoformat()
     rows = [
         {
             col.name: loaded_at
@@ -223,10 +223,10 @@ def _duckdb_column_type(column: "Column[Any]") -> str:
         return "BOOLEAN"
     if isinstance(column.type, Integer):
         return "BIGINT"
-    # DateTime must be checked before Date: a datetime serialises to an
-    # ISO timestamp string that DuckDB parses as a (naive, UTC) TIMESTAMP.
+    # DateTime must be checked before Date: a tz-aware datetime serialises
+    # to an ISO string with offset that DuckDB parses as TIMESTAMPTZ.
     if isinstance(column.type, DateTime):
-        return "TIMESTAMP"
+        return "TIMESTAMP WITH TIME ZONE"
     if isinstance(column.type, Date):
         return "DATE"
     # Strings and string-backed enums

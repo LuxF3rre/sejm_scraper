@@ -11,6 +11,7 @@ dependencies = [
     "duckdb-engine>=0.17.0",
     "httpx>=0.28.1",
     "pydantic>=2.11.4",
+    "pytz>=2025.1",
     "sqlalchemy>=2.0.41",
     "sqlmodel>=0.0.24",
     "stamina>=24.3.0",

@@ -54,8 +54,8 @@ def test_bulk_upsert_inserts_records(engine: "Engine") -> None:
 
 
 def test_bulk_upsert_stamps_loaded_at(engine: "Engine") -> None:
-    """Every inserted row gets a naive UTC loaded_at timestamp."""
-    before = datetime.now(UTC).replace(tzinfo=None)
+    """Every inserted row gets a timezone-aware UTC loaded_at timestamp."""
+    before = datetime.now(UTC)
     term = database.Term(
         id="abc123",
         number=10,
@@ -69,20 +69,20 @@ def test_bulk_upsert_stamps_loaded_at(engine: "Engine") -> None:
             records=[term],
         )
         session.commit()
-    after = datetime.now(UTC).replace(tzinfo=None)
+    after = datetime.now(UTC)
 
     with sqlmodel.Session(engine) as session:
         result = session.exec(sqlmodel.select(database.Term)).first()
         assert result is not None
         assert result.loaded_at is not None
-        # Stored as naive UTC wall-clock time.
-        assert result.loaded_at.tzinfo is None
+        # Stored as a timezone-aware UTC timestamp.
+        assert result.loaded_at.tzinfo is not None
         assert before <= result.loaded_at <= after
 
 
 def test_bulk_upsert_refreshes_loaded_at_on_merge(engine: "Engine") -> None:
     """Re-upserting a row updates loaded_at, ignoring the record value."""
-    stale = datetime(2000, 1, 1)  # noqa: DTZ001  # naive UTC to match column
+    stale = datetime(2000, 1, 1, tzinfo=UTC)
     term = database.Term(
         id="abc123",
         number=10,
